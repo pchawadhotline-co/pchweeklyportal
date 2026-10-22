@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCH — Administrator Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        navy: { 950: '#070b19', 900: '#0d1326', 800: '#151d38', 700: '#212d54' },
+                        gold: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' },
+                        'sky-custom': '#38bdf8'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #070b19; color: #f8fafc; }
+        .card-3d { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .card-3d:hover { transform: translateY(-3px); box-shadow: 0 25px 35px -10px rgba(56, 189, 248, 0.15), 0 0 20px rgba(245, 158, 11, 0.08); }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 1rem; border-radius: 0.75rem; color: #cbd5e1; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .nav-item:hover { background: #0d1326; color: #f8fafc; }
+        .nav-item.active { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05)); color: #fbbf24; border-left: 3px solid #fbbf24; padding-left: calc(1rem - 3px); }
+        .nav-item i { width: 1rem; text-align: center; }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.25s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #070b19; }
+        ::-webkit-scrollbar-thumb { background: #212d54; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-slide-in { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .chart-bar { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .chart-bar:hover { fill: #fbbf24; }
+        .modal-overlay { display: none; }
+        .modal-overlay.active { display: flex; }
+        .search-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 12px center; background-size: 16px; padding-left: 36px; }
+        .cmd-item { padding: 0.65rem 1rem; cursor: pointer; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; }
+        .cmd-item:hover, .cmd-item.selected { background: #212d54; }
+        .badge { display: inline-flex; align-items: center; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; }
+        @media (max-width: 1024px) {
+            .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 40; transform: translateX(-100%); transition: transform 0.3s; }
+            .sidebar.open { transform: translateX(0); }
+            .main-wrap { margin-left: 0 !important; }
+        }
+        .session-bar { background: linear-gradient(90deg, #fbbf24, #38bdf8); height: 3px; transition: width 1s linear; }
+    </style>
+</head>
+<body class="min-h-screen bg-navy-950">
+
+<div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col space-y-3 pointer-events-none max-w-sm w-full px-4"></div>
+
+<!-- LOGIN -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-b from-navy-950 to-navy-900">
+    <div class="bg-navy-800 border border-navy-700 rounded-3xl max-w-md w-full p-8 shadow-2xl card-3d">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 mx-auto flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-lg shadow-rose-500/20">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold text-white">Administrator Access</h1>
+            <p class="text-xs text-slate-400 mt-1">Restricted console — authorized personnel only</p>
+        </div>
+        <form id="login-form" class="space-y-4" onsubmit="handleLogin(event)">
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Administrator ID</label>
+                <div class="relative">
+                    <i class="fa-solid fa-user-shield absolute left-4 top-3.5 text-slate-400"></i>
+                    <input type="text" id="admin-user" required autocomplete="off" class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500" placeholder="Enter administrator ID">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Access Key</label>
+                <div class="relative">
+                    <i class="fa-solid fa-key absolute left-4 top-3.5 text-slate-400"></i>
+                    <input type="password" id="admin-pass" required autocomplete="off" class="w-full bg-navy-950 border border-navy-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500" placeholder="••••••••">
+                </div>
+            </div>
+            <div id="lockout-banner" class="hidden bg-rose-500/10 border border-rose-500/40 rounded-xl p-3 text-xs text-rose-400 font-bold">
+                <i class="fa-solid fa-lock mr-1.5"></i> Locked out. Try again in <span id="lockout-timer" class="text-white">60</span>s.
+            </div>
+            <div id="login-error" class="text-rose-400 text-xs hidden"></div>
+            <button type="submit" id="login-btn" class="w-full py-3.5 bg-gradient-to-r from-rose-500 to-rose-700 text-white font-extrabold rounded-xl shadow-lg shadow-rose-500/20 hover:brightness-110 active:scale-95 transition text-sm">
+                <i class="fa-solid fa-unlock mr-1.5"></i> Unlock Console
+            </button>
+        </form>
+        <div class="mt-6 text-center text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+            <i class="fa-solid fa-lock mr-1"></i> Session expires on tab close · 30 min inactivity
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN SHELL -->
+<div id="admin-screen" class="hidden min-h-screen">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar bg-navy-900 border-r border-navy-700 w-64 flex flex-col fixed inset-y-0 left-0 z-40">
+        <div class="p-5 border-b border-navy-700 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center text-white text-lg font-black shadow-lg shadow-rose-500/30">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <p class="text-sm font-black text-white">Admin</p>
+                <p class="text-[10px] font-semibold text-rose-400 tracking-widest uppercase">Restricted</p>
+            </div>
+        </div>
+        <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+            <div class="nav-item active" data-tab="overview" onclick="showSection('overview')"><i class="fa-solid fa-chart-line"></i> Overview</div>
+            <div class="nav-item" data-tab="users" onclick="showSection('users')"><i class="fa-solid fa-users"></i> Users <span id="badge-users" class="ml-auto badge bg-sky-custom/20 text-sky-custom"></span></div>
+            <div class="nav-item" data-tab="transactions" onclick="showSection('transactions')"><i class="fa-solid fa-receipt"></i> Transactions <span id="badge-txns" class="ml-auto badge bg-gold-500/20 text-gold-400"></span></div>
+            <div class="nav-item" data-tab="pipeline" onclick="showSection('pipeline')"><i class="fa-solid fa-diagram-project"></i> Pipeline <span id="badge-pipeline" class="ml-auto badge bg-rose-500/20 text-rose-400 hidden">!</span></div>
+            <div class="nav-item" data-tab="activity" onclick="showSection('activity')"><i class="fa-solid fa-clock-rotate-left"></i> Activity Log</div>
+            <div class="nav-item" data-tab="telegram" onclick="showSection('telegram')"><i class="fa-brands fa-telegram"></i> Telegram</div>
+            <div class="nav-item" data-tab="audit" onclick="showSection('audit')"><i class="fa-solid fa-list-check"></i> Audit Trail</div>
+            <div class="nav-item" data-tab="data" onclick="showSection('data')"><i class="fa-solid fa-database"></i> Data Tools</div>
+            <div class="nav-item" data-tab="settings" onclick="showSection('settings')"><i class="fa-solid fa-gear"></i> Settings</div>
+        </nav>
+        <div class="p-3 border-t border-navy-700">
+            <button onclick="handleLogout()" class="w-full px-4 py-2.5 bg-rose-500/20 border border-rose-500/40 text-rose-400 font-bold rounded-xl text-xs hover:bg-rose-500/30 active:scale-95 transition">
+                <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <div id="sidebar-backdrop" class="hidden fixed inset-0 bg-black/60 z-30 lg:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- MAIN -->
+    <div class="main-wrap ml-0 lg:ml-64 flex flex-col min-h-screen">
+        <header class="bg-navy-950/90 backdrop-blur-md border-b border-navy-700 sticky top-0 z-20">
+            <div class="session-bar" id="session-bar" style="width:100%"></div>
+            <div class="px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-slate-300 hover:text-white p-2">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h1 id="page-title" class="text-lg font-bold text-white truncate">Overview</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openCommandPalette()" class="hidden sm:flex items-center gap-2 px-3 py-2 bg-navy-900 border border-navy-700 rounded-xl text-xs text-slate-400 hover:text-white hover:border-sky-custom transition" title="Search (Ctrl+K)">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Search</span>
+                        <kbd class="px-1.5 py-0.5 bg-navy-950 border border-navy-700 rounded text-[9px] font-mono">⌘K</kbd>
+                    </button>
+                    <div class="hidden sm:flex items-center gap-2 px-3 py-2 bg-navy-900 border border-navy-700 rounded-xl text-xs text-slate-400" title="Session timer">
+                        <i class="fa-solid fa-hourglass-half text-gold-400"></i>
+                        <span id="session-timer" class="font-mono font-bold text-white">30:00</span>
+                    </div>
+                    <button onclick="refreshData()" class="p-2 text-sky-custom hover:text-white transition rounded-lg" title="Refresh (R)">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                    <div class="flex items-center gap-2 px-2.5 py-1.5 bg-navy-900 border border-navy-700 rounded-xl">
+                        <div class="w-6 h-6 rounded-full bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center text-white text-[10px] font-black">A</div>
+                        <span class="hidden sm:inline text-xs font-bold text-white" id="admin-label">Admin</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow p-4 sm:p-6 max-w-[1600px] w-full mx-auto">
+            <!-- OVERVIEW -->
+            <section id="section-overview" class="section active space-y-6"></section>
+            <!-- USERS -->
+            <section id="section-users" class="section space-y-6"></section>
+            <!-- TRANSACTIONS -->
+            <section id="section-transactions" class="section space-y-6"></section>
+            <!-- PIPELINE -->
+            <section id="section-pipeline" class="section space-y-6"></section>
+            <!-- ACTIVITY -->
+            <section id="section-activity" class="section space-y-6"></section>
+            <!-- TELEGRAM -->
+            <section id="section-telegram" class="section space-y-6"></section>
+            <!-- AUDIT -->
+            <section id="section-audit" class="section space-y-6"></section>
+            <!-- DATA -->
+            <section id="section-data" class="section space-y-6"></section>
+            <!-- SETTINGS -->
+            <section id="section-settings" class="section space-y-6"></section>
+        </main>
+
+        <footer class="border-t border-navy-700/50 py-4 text-center text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+            &copy; 2026 PCH Administrator Console — for authorized use only
+        </footer>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div id="global-modal" class="modal-overlay fixed inset-0 z-[90] items-center justify-center bg-navy-950/80 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-navy-800 border border-navy-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative my-auto">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl p-2 rounded-lg active:bg-navy-700 transition">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div id="modal-content"></div>
+    </div>
+</div>
+
+<!-- COMMAND PALETTE -->
+<div id="cmd-palette" class="modal-overlay fixed inset-0 z-[95] items-start justify-center bg-navy-950/80 backdrop-blur-sm p-4 pt-[10vh]">
+    <div class="bg-navy-800 border border-navy-700 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden">
+        <div class="p-3 border-b border-navy-700">
+            <input type="text" id="cmd-input" placeholder="Type to search users, transactions, tabs..." class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-custom search-input" oninput="updateCommandResults()" onkeydown="handleCommandKey(event)">
+        </div>
+        <div id="cmd-results" class="max-h-80 overflow-y-auto p-2"></div>
+        <div class="p-2 border-t border-navy-700 text-[10px] text-slate-500 flex justify-between px-3">
+            <span><kbd class="px-1 py-0.5 bg-navy-950 border border-navy-700 rounded font-mono">↑↓</kbd> navigate · <kbd class="px-1 py-0.5 bg-navy-950 border border-navy-700 rounded font-mono">↵</kbd> select</span>
+            <span><kbd class="px-1 py-0.5 bg-navy-950 border border-navy-700 rounded font-mono">esc</kbd> close</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ============================================================
+       CREDENTIALS — XOR-obfuscated
+       ============================================================ */
+    const _K = 42;
+    const _U = [107, 71, 75, 88, 67, 79];
+    const _P = [100, 75, 94, 94, 88, 67, 89, 66, 75, 24, 26, 26, 29];
+    function _d(arr) { return arr.map(c => String.fromCharCode(c ^ _K)).join(''); }
+    function checkCreds(u, p) {
+        try {
+            return String(u).trim().toLowerCase() === _d(_U).toLowerCase() && String(p) === _d(_P);
+        } catch (e) { return false; }
+    }
+
+    /* ============================================================
+       CONSTANTS
+       ============================================================ */
+    const STORAGE_KEY = 'pch_device_state_v12';
+    const AUDIT_KEY = 'pch_admin_audit';
+    const LOCKOUT_KEY = 'pch_admin_lockout';
+    const SESSION_KEY = 'pch_admin_session';
+    const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+    const MAX_FAILED_ATTEMPTS = 5;
+    const LOCKOUT_MS = 60 * 1000;
+
+    let currentTab = 'overview';
+    let sessionExpiry = Date.now() + SESSION_TIMEOUT_MS;
+    let sessionInterval = null;
+    let lastActivityTs = Date.now();
+
+    /* ============================================================
+       STORAGE HELPERS
+       ============================================================ */
+    function readState() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : { registeredUsers: [], transactions: [], accessLogs: [], withdrawalState: 'none', currentUser: null, telegramConfig: { botToken: '', chatId: '' } };
+        } catch (e) { return { registeredUsers: [], transactions: [], accessLogs: [], withdrawalState: 'none', currentUser: null, telegramConfig: { botToken: '', chatId: '' } }; }
+    }
+    function writeState(s) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); return true; }
+        catch (e) { showToast('Error', 'Unable to save state.', 'error'); return false; }
+    }
+    function readAudit() {
+        try { return JSON.parse(localStorage.getItem(AUDIT_KEY) || '[]'); } catch (e) { return []; }
+    }
+    function logAdminAction(action, details) {
+        const log = readAudit();
+        log.unshift({ ts: new Date().toISOString(), action, details });
+        if (log.length > 200) log.length = 200;
+        try { localStorage.setItem(AUDIT_KEY, JSON.stringify(log)); } catch (e) {}
+    }
+    function readLockout() {
+        try { return JSON.parse(localStorage.getItem(LOCKOUT_KEY) || '{"attempts":0,"lockedUntil":0}'); }
+        catch (e) { return { attempts: 0, lockedUntil: 0 }; }
+    }
+    function writeLockout(l) { try { localStorage.setItem(LOCKOUT_KEY, JSON.stringify(l)); } catch (e) {} }
+    function clearLockout() { try { localStorage.removeItem(LOCKOUT_KEY); } catch (e) {} }
+
+    /* ============================================================
+       UTILS
+       ============================================================ */
+    function escapeHtml(str) {
+        return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function fmtMoney(n) {
+        return '$' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function fmtTime(iso) {
+        try { const d = new Date(iso); return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+        catch (e) { return iso; }
+    }
+    function fuzzyMatch(q, str) {
+        q = q.toLowerCase(); str = String(str || '').toLowerCase();
+        let qi = 0;
+        for (let i = 0; i < str.length && qi < q.length; i++) if (str[i] === q[qi]) qi++;
+        return qi === q.length;
+    }
+    function toCSV(rows, headers) {
+        const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        return [headers.join(','), ...rows.map(r => headers.map(h => esc(r[h])).join(','))].join('\n');
+    }
+    function downloadFile(content, filename, mime) {
+        const blob = new Blob([content], { type: mime || 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 500);
+    }
+
+    /* ============================================================
+       TOASTS
+       ============================================================ */
+    function showToast(title, message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toastId = 'toast-' + Date.now() + '-' + Math.random();
+        const icon = type === 'success' ? 'fa-circle-check text-emerald-400' : type === 'error' ? 'fa-circle-exclamation text-rose-400' : 'fa-circle-info text-sky-custom';
+        const borderColor = type === 'success' ? 'border-emerald-500/40' : type === 'error' ? 'border-rose-500/40' : 'border-sky-custom/40';
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `pointer-events-auto bg-navy-900 border ${borderColor} p-4 rounded-2xl shadow-2xl flex items-start space-x-3 toast-slide-in backdrop-blur-xl`;
+        toast.innerHTML = `<div class="text-lg mt-0.5"><i class="fa-solid ${icon}"></i></div><div class="flex-grow"><h5 class="font-bold text-white text-xs">${escapeHtml(title)}</h5><p class="text-[11px] text-slate-300 mt-0.5">${escapeHtml(message)}</p></div><button onclick="document.getElementById('${toastId}').remove()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>`;
+        container.appendChild(toast);
+        setTimeout(() => { const el = document.getElementById(toastId); if (el) el.remove(); }, 5000);
+    }
+
+    /* ============================================================
+       SESSION & AUTH
+       ============================================================ */
+    function isAuthenticated() {
+        return sessionStorage.getItem(SESSION_KEY) === 'active' && Date.now() < sessionExpiry;
+    }
+    function setAuthenticated() {
+        sessionStorage.setItem(SESSION_KEY, 'active');
+        sessionExpiry = Date.now() + SESSION_TIMEOUT_MS;
+        lastActivityTs = Date.now();
+    }
+    function clearAuth() {
+        sessionStorage.removeItem(SESSION_KEY);
+    }
+    function touchActivity() { lastActivityTs = Date.now(); }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const lockout = readLockout();
+        if (lockout.lockedUntil > Date.now()) {
+            showToast('Locked Out', 'Try again shortly.', 'error');
+            return;
+        }
+        const u = document.getElementById('admin-user').value;
+        const p = document.getElementById('admin-pass').value;
+        const errEl = document.getElementById('login-error');
+        if (checkCreds(u, p)) {
+            clearLockout();
+            setAuthenticated();
+            errEl.classList.add('hidden');
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-screen').classList.remove('hidden');
+            document.getElementById('admin-label').textContent = u;
+            logAdminAction('LOGIN', 'Admin authenticated successfully');
+            showToast('Welcome, Administrator', 'Console unlocked.', 'success');
+            refreshData();
+            startSessionTimer();
+        } else {
+            lockout.attempts = (lockout.attempts || 0) + 1;
+            if (lockout.attempts >= MAX_FAILED_ATTEMPTS) {
+                lockout.lockedUntil = Date.now() + LOCKOUT_MS;
+                lockout.attempts = 0;
+                writeLockout(lockout);
+                logAdminAction('LOGIN_FAILED', 'Lockout triggered');
+                startLockoutTimer();
+            } else {
+                writeLockout(lockout);
+                errEl.textContent = `Invalid credentials. ${MAX_FAILED_ATTEMPTS - lockout.attempts} attempt(s) remaining.`;
+                errEl.classList.remove('hidden');
+            }
+        }
+    }
+
+    function handleLogout() {
+        logAdminAction('LOGOUT', 'Admin signed out manually');
+        clearAuth();
+        if (sessionInterval) clearInterval(sessionInterval);
+        document.getElementById('admin-screen').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('admin-user').value = '';
+        document.getElementById('admin-pass').value = '';
+        showToast('Signed Out', 'Session ended.', 'info');
+    }
+
+    function startSessionTimer() {
+        if (sessionInterval) clearInterval(sessionInterval);
+        sessionInterval = setInterval(() => {
+            const elapsed = Date.now() - lastActivityTs;
+            if (elapsed > SESSION_TIMEOUT_MS) {
+                logAdminAction('SESSION_EXPIRE', 'Auto-logout after 30 min inactivity');
+                showToast('Session Expired', 'You have been logged out due to inactivity.', 'error');
+                handleLogout();
+                return;
+            }
+            const remaining = SESSION_TIMEOUT_MS - elapsed;
+            const m = Math.floor(remaining / 60000);
+            const s = Math.floor((remaining % 60000) / 1000);
+            const timerEl = document.getElementById('session-timer');
+            if (timerEl) timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            const bar = document.getElementById('session-bar');
+            if (bar) bar.style.width = (remaining / SESSION_TIMEOUT_MS * 100) + '%';
+        }, 1000);
+    }
+
+    function startLockoutTimer() {
+        const banner = document.getElementById('lockout-banner');
+        const timer = document.getElementById('lockout-timer');
+        const btn = document.getElementById('login-btn');
+        if (banner) banner.classList.remove('hidden');
+        if (btn) { btn.disabled = true; btn.classList.add('opacity-50'); }
+        const tick = () => {
+            const lockout = readLockout();
+            const remaining = Math.max(0, lockout.lockedUntil - Date.now());
+            if (remaining <= 0) {
+                if (banner) banner.classList.add('hidden');
+                if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
+                clearLockout();
+                return;
+            }
+            if (timer) timer.textContent = Math.ceil(remaining / 1000);
+            setTimeout(tick, 500);
+        };
+        tick();
+    }
+
+    /* ============================================================
+       SIDEBAR & NAVIGATION
+       ============================================================ */
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-backdrop').classList.toggle('hidden');
+    }
+    function showSection(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        const section = document.getElementById('section-' + tab);
+        if (section) section.classList.add('active');
+        const titles = { overview: 'Overview', users: 'Users', transactions: 'Transactions', pipeline: 'Pipeline', activity: 'Activity Log', telegram: 'Telegram', audit: 'Audit Trail', data: 'Data Tools', settings: 'Settings' };
+        const titleEl = document.getElementById('page-title');
+        if (titleEl) titleEl.textContent = titles[tab] || tab;
+        if (window.innerWidth < 1024 && document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
+        touchActivity();
+        renderSection(tab);
+    }
+
+    /* ============================================================
+       RENDER ROUTER
+       ============================================================ */
+    function refreshData() {
+        const s = readState();
+        updateBadges(s);
+        renderSection(currentTab);
+        touchActivity();
+    }
+    function updateBadges(s) {
+        const bU = document.getElementById('badge-users');
+        const bT = document.getElementById('badge-txns');
+        const bP = document.getElementById('badge-pipeline');
+        if (bU) bU.textContent = (s.registeredUsers || []).length;
+        if (bT) bT.textContent = (s.transactions || []).length;
+        if (bP) {
+            if ((s.withdrawalState || 'none') !== 'none') bP.classList.remove('hidden');
+            else bP.classList.add('hidden');
+        }
+    }
+    function renderSection(tab) {
+        const s = readState();
+        const el = document.getElementById('section-' + tab);
+        if (!el) return;
+        if (tab === 'overview') el.innerHTML = renderOverview(s);
+        else if (tab === 'users') el.innerHTML = renderUsers(s);
+        else if (tab === 'transactions') el.innerHTML = renderTransactions(s);
+        else if (tab === 'pipeline') el.innerHTML = renderPipeline(s);
+        else if (tab === 'activity') el.innerHTML = renderActivity(s);
+        else if (tab === 'telegram') el.innerHTML = renderTelegram(s);
+        else if (tab === 'audit') el.innerHTML = renderAudit();
+        else if (tab === 'data') el.innerHTML = renderData(s);
+        else if (tab === 'settings') el.innerHTML = renderSettings(s);
+    }
+      /* ============================================================
+       OVERVIEW
+       ============================================================ */
+    function renderOverview(s) {
+        const users = s.registeredUsers || [];
+        const txns = s.transactions || [];
+        const logs = s.accessLogs || [];
+        const pending = txns.filter(t => t.status === 'Pending').length;
+        const completed = txns.filter(t => t.status === 'Completed').length;
+        const totalVolume = txns.filter(t => t.status === 'Completed').reduce((sum, t) => sum + (t.amount || 0), 0);
+        const stuck = (s.withdrawalState || 'none') !== 'none';
+
+        const stats = [
+            { label: 'Registered Users', value: users.length, icon: 'fa-users', color: 'sky-custom', delta: users.length > 0 ? '+' + users.length : '0' },
+            { label: 'Total Volume', value: fmtMoney(totalVolume), icon: 'fa-dollar-sign', color: 'gold-400', delta: completed + ' completed' },
+            { label: 'Pending Review', value: pending, icon: 'fa-clock', color: 'rose-400', delta: pending > 0 ? 'Action needed' : 'All clear' },
+            { label: 'Pipeline Status', value: stuck ? '1' : '0', icon: 'fa-triangle-exclamation', color: stuck ? 'gold-400' : 'emerald-400', delta: stuck ? 'Outstanding' : 'Clean' }
+        ];
+
+        const last14 = [];
+        for (let i = 13; i >= 0; i--) {
+            const day = new Date(); day.setDate(day.getDate() - i); day.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(day); dayEnd.setDate(dayEnd.getDate() + 1);
+            const count = txns.filter(t => {
+                try { const td = new Date(t.date); return td >= day && td < dayEnd; } catch (e) { return false; }
+            }).length;
+            last14.push({ date: day, count });
+        }
+        const maxCount = Math.max(1, ...last14.map(d => d.count));
+        const chartW = 700, chartH = 180, pad = 20;
+        const barW = (chartW - pad * 2) / 14;
+        const bars = last14.map((d, i) => {
+            const h = (d.count / maxCount) * (chartH - pad * 2);
+            const x = pad + i * barW + barW * 0.15;
+            const y = chartH - pad - h;
+            const w = barW * 0.7;
+            return `<rect class="chart-bar" x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#gradBar)" rx="4"><title>${d.date.toLocaleDateString()} — ${d.count} txn(s)</title></rect>`;
+        }).join('');
+
+        const recentTxns = [...txns].slice(0, 5);
+        const recentLogs = [...logs].slice(0, 5);
+
+        return `
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                ${stats.map(st => `
+                    <div class="bg-navy-800 border border-navy-700 rounded-2xl p-5 card-3d">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">${st.label}</p>
+                                <p class="text-2xl font-black text-white mt-1">${st.value}</p>
+                                <p class="text-[10px] text-${st.color} font-bold mt-1.5">${st.delta}</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-${st.color}/15 text-${st.color} flex items-center justify-center">
+                                <i class="fa-solid ${st.icon}"></i>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-2 bg-navy-800 border border-navy-700 rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Transaction Volume — Last 14 Days</h3>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Daily transaction count across all users</p>
+                        </div>
+                        <span class="badge bg-sky-custom/20 text-sky-custom">${txns.length} total</span>
+                    </div>
+                    <svg viewBox="0 0 ${chartW} ${chartH}" class="w-full" preserveAspectRatio="none" style="height:220px">
+                        <defs>
+                            <linearGradient id="gradBar" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#38bdf8" />
+                                <stop offset="100%" stop-color="#0d1326" stop-opacity="0.6" />
+                            </linearGradient>
+                        </defs>
+                        <line x1="${pad}" y1="${chartH - pad}" x2="${chartW - pad}" y2="${chartH - pad}" stroke="#212d54" stroke-width="1" />
+                        <line x1="${pad}" y1="${chartH/2}" x2="${chartW - pad}" y2="${chartH/2}" stroke="#212d54" stroke-width="0.5" stroke-dasharray="4 4" />
+                        ${bars}
+                    </svg>
+                    <div class="flex justify-between text-[9px] text-slate-500 mt-1 px-2">
+                        <span>${last14[0].date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span>${last14[6].date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span>${last14[13].date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                </div>
+
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-sm font-bold text-white">System Health</h3>
+                    ${[
+                        { label: 'Telegram Bot', ok: !!(s.telegramConfig && s.telegramConfig.botToken && s.telegramConfig.chatId), icon: 'fa-telegram' },
+                        { label: 'Storage Quota', ok: (() => { try { return JSON.stringify(s).length < 4000000; } catch (e) { return true; } })(), icon: 'fa-database' },
+                        { label: 'Active Pipeline', ok: (s.withdrawalState || 'none') === 'none', icon: 'fa-diagram-project' },
+                        { label: 'Access Log', ok: (logs.length > 0), icon: 'fa-clock-rotate-left' }
+                    ].map(h => `
+                        <div class="flex items-center justify-between p-2.5 bg-navy-900 rounded-xl">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid ${h.icon} text-${h.ok ? 'emerald' : 'rose'}-400 text-xs"></i>
+                                <span class="text-xs font-bold text-slate-300">${h.label}</span>
+                            </div>
+                            <span class="badge ${h.ok ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">${h.ok ? 'OK' : 'CHECK'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-white">Recent Transactions</h3>
+                        <button onclick="showSection('transactions')" class="text-[10px] text-sky-custom font-bold uppercase hover:text-white">View all →</button>
+                    </div>
+                    ${recentTxns.length === 0 ? `<p class="text-xs text-slate-500 text-center py-6">No transactions yet.</p>` : recentTxns.map(t => `
+                        <div class="flex items-center justify-between py-2 border-b border-navy-700/50 last:border-0">
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-white truncate">${escapeHtml(t.type || '—')}</p>
+                                <p class="text-[10px] text-slate-500 font-mono">${escapeHtml(t.ref || '—')}</p>
+                            </div>
+                            <div class="text-right shrink-0 ml-3">
+                                <p class="text-xs font-black text-gold-400">${fmtMoney(t.amount)}</p>
+                                <p class="text-[9px] ${t.status === 'Completed' ? 'text-emerald-400' : 'text-sky-custom'} font-bold uppercase">${t.status}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-white">Recent Access</h3>
+                        <button onclick="showSection('activity')" class="text-[10px] text-sky-custom font-bold uppercase hover:text-white">View all →</button>
+                    </div>
+                    ${recentLogs.length === 0 ? `<p class="text-xs text-slate-500 text-center py-6">No access logs yet.</p>` : recentLogs.map(l => `
+                        <div class="flex items-center gap-2 py-2 border-b border-navy-700/50 last:border-0">
+                            <i class="fa-solid fa-${l.os === 'iOS' || l.os === 'Android' ? 'mobile-screen-button' : 'desktop'} text-sky-custom text-xs"></i>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[11px] font-bold text-white truncate">${escapeHtml(l.action)} <span class="text-slate-400 font-normal">· ${escapeHtml(l.name || l.user || '—')}</span></p>
+                                <p class="text-[9px] text-slate-500">${escapeHtml(l.ip || '—')} · ${escapeHtml(l.os || '—')}</p>
+                            </div>
+                            <p class="text-[9px] text-slate-500 shrink-0">${fmtTime(l.time)}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    /* ============================================================
+       USERS
+       ============================================================ */
+    let usersSearchQuery = '';
+    let usersSortKey = 'username';
+    let usersSortDir = 'asc';
+    function renderUsers(s) {
+        const users = s.registeredUsers || [];
+        let filtered = users.filter(u => {
+            if (!usersSearchQuery) return true;
+            const q = usersSearchQuery.toLowerCase();
+            return [u.username, u.firstName, u.lastName, u.email, u.phone, u.city].some(f => String(f || '').toLowerCase().includes(q));
+        });
+        filtered.sort((a, b) => {
+            const va = String(a[usersSortKey] || '').toLowerCase();
+            const vb = String(b[usersSortKey] || '').toLowerCase();
+            return usersSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        });
+
+        return `
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div class="relative w-full sm:max-w-md">
+                    <input type="text" id="users-search" placeholder="Search by name, username, email, phone, city..." value="${escapeHtml(usersSearchQuery)}" oninput="usersSearchQuery=this.value;renderSection('users');" class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom search-input">
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <select onchange="usersSortKey=this.value;renderSection('users');" class="bg-navy-950 border border-navy-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-sky-custom">
+                        <option value="username" ${usersSortKey === 'username' ? 'selected' : ''}>Username</option>
+                        <option value="firstName" ${usersSortKey === 'firstName' ? 'selected' : ''}>First Name</option>
+                        <option value="email" ${usersSortKey === 'email' ? 'selected' : ''}>Email</option>
+                        <option value="city" ${usersSortKey === 'city' ? 'selected' : ''}>City</option>
+                    </select>
+                    <button onclick="usersSortDir=usersSortDir==='asc'?'desc':'asc';renderSection('users');" class="px-3 py-2.5 bg-navy-950 border border-navy-700 rounded-xl text-xs text-white hover:border-sky-custom transition" title="Toggle sort">
+                        <i class="fa-solid fa-sort-${usersSortDir === 'asc' ? 'down' : 'up'}"></i>
+                    </button>
+                    <button onclick="exportUsersCSV()" class="px-3 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs active:scale-95 transition">
+                        <i class="fa-solid fa-file-csv mr-1"></i> CSV
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-400">Showing <span class="text-white font-bold">${filtered.length}</span> of <span class="text-white font-bold">${users.length}</span> user(s)</p>
+
+            ${filtered.length === 0 ? `
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl p-12 text-center text-slate-400">
+                    <i class="fa-solid fa-users-slash text-3xl text-slate-500 mb-3 block"></i>
+                    <p class="text-sm">${users.length === 0 ? 'No registered users yet.' : 'No users match your search.'}</p>
+                </div>
+            ` : `
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-navy-900 border-b border-navy-700">
+                                <tr class="text-left text-[10px] text-slate-400 uppercase tracking-wider">
+                                    <th class="px-4 py-3">Username</th>
+                                    <th class="px-4 py-3">Name</th>
+                                    <th class="px-4 py-3">Email</th>
+                                    <th class="px-4 py-3">Phone</th>
+                                    <th class="px-4 py-3">City</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map(u => `
+                                    <tr class="border-b border-navy-700/50 hover:bg-navy-900/50 cursor-pointer" onclick="openUserDrilldown('${escapeHtml(u.username)}')">
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-2">
+                                                ${u.photoUrl ? `<img src="${u.photoUrl}" class="w-7 h-7 rounded-lg object-cover border border-gold-400">` : `<div class="w-7 h-7 rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center font-black text-[10px]">${(u.firstName || 'U').charAt(0)}</div>`}
+                                                <span class="font-bold text-gold-400">${escapeHtml(u.username || '—')}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-white">${escapeHtml((u.firstName || '') + ' ' + (u.lastName || ''))}</td>
+                                        <td class="px-4 py-3 text-slate-300 truncate max-w-[180px]">${escapeHtml(u.email || '—')}</td>
+                                        <td class="px-4 py-3 text-slate-300">${escapeHtml(u.phone || '—')}</td>
+                                        <td class="px-4 py-3 text-slate-300">${escapeHtml(u.city || '—')}</td>
+                                        <td class="px-4 py-3 text-right" onclick="event.stopPropagation()">
+                                            <button onclick="openUserDrilldown('${escapeHtml(u.username)}')" class="px-2.5 py-1 bg-sky-custom/20 border border-sky-custom/40 text-sky-custom rounded-lg text-[10px] font-bold hover:bg-sky-custom/30 active:scale-95 mr-1" title="View">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <button onclick="deleteUser('${escapeHtml(u.username)}')" class="px-2.5 py-1 bg-rose-500/20 border border-rose-500/40 text-rose-400 rounded-lg text-[10px] font-bold hover:bg-rose-500/30 active:scale-95" title="Delete">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `}
+        `;
+    }
+
+    function openUserDrilldown(username) {
+        const s = readState();
+        const u = (s.registeredUsers || []).find(x => x.username === username);
+        if (!u) { showToast('Not Found', 'User not found.', 'error'); return; }
+        const userTxns = (s.transactions || []).filter(t => (t.ref || '').includes(username) || t.user === username);
+        const userLogs = (s.accessLogs || []).filter(l => l.user === username);
+        showModal('User Profile — ' + escapeHtml(username), `
+            <div class="flex items-center gap-4 mb-5 pb-5 border-b border-navy-700">
+                ${u.photoUrl ? `<img src="${u.photoUrl}" class="w-16 h-16 rounded-2xl object-cover border-2 border-gold-400">` : `<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-navy-950 flex items-center justify-center font-black text-xl">${(u.firstName || 'U').charAt(0)}</div>`}
+                <div class="min-w-0">
+                    <h3 class="text-lg font-black text-white truncate">${escapeHtml((u.firstName || '') + ' ' + (u.lastName || ''))}</h3>
+                    <p class="text-xs text-gold-400 font-mono">@${escapeHtml(u.username)}</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-5 text-xs">
+                ${[
+                    ['Email', u.email],
+                    ['Phone', u.phone],
+                    ['Address', u.address],
+                    ['City', u.city],
+                    ['State/Parish', u.stateOrParish],
+                    ['ZIP/Postal', u.zip]
+                ].map(([k, v]) => `
+                    <div class="bg-navy-900 rounded-xl p-3">
+                        <p class="text-[9px] text-slate-500 uppercase font-bold">${k}</p>
+                        <p class="text-xs text-white mt-0.5 break-words">${escapeHtml(v || '—')}</p>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="mb-4">
+                <p class="text-[10px] text-slate-400 uppercase font-bold mb-2">Recent Transactions (${userTxns.length})</p>
+                ${userTxns.length === 0 ? `<p class="text-xs text-slate-500">None.</p>` : userTxns.slice(0, 5).map(t => `
+                    <div class="flex items-center justify-between bg-navy-900 rounded-lg p-2 mb-1">
+                        <span class="text-[11px] text-white font-bold">${escapeHtml(t.type)}</span>
+                        <span class="text-[11px] text-gold-400 font-black">${fmtMoney(t.amount)}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="flex gap-2 justify-end pt-3 border-t border-navy-700">
+                <button onclick="closeModal()" class="px-4 py-2 bg-navy-950 text-slate-300 rounded-xl text-xs font-bold">Close</button>
+                <button onclick="deleteUser('${escapeHtml(username)}');closeModal();" class="px-4 py-2 bg-rose-500/20 border border-rose-500/40 text-rose-400 rounded-xl text-xs font-bold active:scale-95">
+                    <i class="fa-solid fa-trash mr-1"></i> Delete User
+                </button>
+            </div>
+        `);
+    }
+
+    /* ============================================================
+       TRANSACTIONS
+       ============================================================ */
+    let txnStatusFilter = 'all';
+    let txnSearchQuery = '';
+    function renderTransactions(s) {
+        const txns = s.transactions || [];
+        let filtered = txns.filter(t => {
+            if (txnStatusFilter !== 'all' && t.status !== txnStatusFilter) return false;
+            if (!txnSearchQuery) return true;
+            const q = txnSearchQuery.toLowerCase();
+            return [t.ref, t.type, t.status].some(f => String(f || '').toLowerCase().includes(q));
+        });
+        const totalVol = filtered.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        return `
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                ${['all', 'Completed', 'Pending', 'On Hold'].map(k => {
+                    const count = k === 'all' ? txns.length : txns.filter(t => t.status === k).length;
+                    const active = txnStatusFilter === k;
+                    return `
+                        <button onclick="txnStatusFilter='${k}';renderSection('transactions');" class="bg-navy-800 border ${active ? 'border-sky-custom' : 'border-navy-700'} rounded-2xl p-4 text-left card-3d">
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">${k === 'all' ? 'All Transactions' : k}</p>
+                            <p class="text-xl font-black ${active ? 'text-sky-custom' : 'text-white'} mt-1">${count}</p>
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <input type="text" placeholder="Search transactions..." value="${escapeHtml(txnSearchQuery)}" oninput="txnSearchQuery=this.value;renderSection('transactions');" class="w-full sm:max-w-md bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-custom search-input">
+                <button onclick="exportTxnsCSV()" class="px-3 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs active:scale-95 transition">
+                    <i class="fa-solid fa-file-csv mr-1"></i> CSV
+                </button>
+            </div>
+
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-4 flex items-center justify-between">
+                <span class="text-xs text-slate-400">Filtered volume: <span class="text-gold-400 font-black">${fmtMoney(totalVol)}</span></span>
+                <span class="text-xs text-slate-400">${filtered.length} transaction(s)</span>
+            </div>
+
+            ${filtered.length === 0 ? `
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl p-12 text-center text-slate-400">
+                    <i class="fa-solid fa-folder-open text-3xl text-slate-500 mb-3 block"></i>
+                    <p class="text-sm">No transactions match your filters.</p>
+                </div>
+            ` : `
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-navy-900 border-b border-navy-700">
+                                <tr class="text-left text-[10px] text-slate-400 uppercase tracking-wider">
+                                    <th class="px-4 py-3">Reference</th>
+                                    <th class="px-4 py-3">Type</th>
+                                    <th class="px-4 py-3 text-right">Amount</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3">Date</th>
+                                    <th class="px-4 py-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map((t, idx) => {
+                                    const badge = t.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : t.status === 'Pending' ? 'bg-sky-custom/20 text-sky-custom' : t.status === 'On Hold' ? 'bg-gold-500/20 text-gold-400' : 'bg-rose-500/20 text-rose-400';
+                                    return `
+                                        <tr class="border-b border-navy-700/50 hover:bg-navy-900/50">
+                                            <td class="px-4 py-3 font-mono text-xs text-slate-300">${escapeHtml(t.ref)}</td>
+                                            <td class="px-4 py-3 text-white">${escapeHtml(t.type)}</td>
+                                            <td class="px-4 py-3 text-right font-bold text-gold-400">${fmtMoney(t.amount)}</td>
+                                            <td class="px-4 py-3"><span class="badge ${badge}">${t.status}</span></td>
+                                            <td class="px-4 py-3 text-xs text-slate-400">${escapeHtml(t.date)}</td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button onclick="markTxnComplete(${idx})" class="px-2 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 rounded-lg text-[10px] font-bold hover:bg-emerald-500/30 active:scale-95" title="Mark Complete">
+                                                    <i class="fa-solid fa-check"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `}
+        `;
+    }
+
+    /* ============================================================
+       PIPELINE
+       ============================================================ */
+    function renderPipeline(s) {
+        const st = s.withdrawalState || 'none';
+        const cw = s.currentWithdrawal || null;
+        const cu = s.currentUser || null;
+
+        const stageMap = {
+            'none': { label: 'Clean', step: 0, color: 'emerald' },
+            'pending': { label: 'Pending Clear', step: 1, color: 'rose' },
+            'moneypak_submitted': { label: 'Stamp Required', step: 2, color: 'gold' },
+            'stamp_submitted': { label: 'Paperwork Outstanding', step: 3, color: 'sky' }
+        };
+        const meta = stageMap[st] || stageMap['none'];
+        const steps = ['Submitted', 'Clear Processing', 'Stamp of Approval', 'Paperwork Signed'];
+
+        return `
+            <div class="bg-navy-800 border border-${meta.color}-500/40 rounded-2xl p-6">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                        <p class="text-[10px] text-${meta.color}-400 uppercase font-black tracking-wider">Current Device Pipeline</p>
+                        <h3 class="text-xl font-black text-white mt-1">${meta.label}</h3>
+                        ${cu ? `<p class="text-xs text-slate-400 mt-1">Active user: <span class="text-sky-custom font-bold">${escapeHtml(cu.username)}</span> (${escapeHtml(cu.firstName)} ${escapeHtml(cu.lastName)})</p>` : ''}
+                    </div>
+                    <span class="badge bg-${meta.color}-500/20 text-${meta.color}-400 text-xs px-3 py-1.5">${st === 'none' ? 'NO PIPELINE' : 'OUTSTANDING'}</span>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-2 mb-6">
+                    ${steps.map((label, i) => {
+                        const done = i < meta.step;
+                        const active = i === meta.step;
+                        const colors = done ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' : active ? `border-${meta.color}-500 bg-${meta.color}-500/20 text-${meta.color}-400 animate-pulse` : 'border-navy-700 bg-navy-900 text-slate-500';
+                        return `
+                            <div class="flex-1 flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full border-2 ${colors} flex items-center justify-center font-black text-xs shrink-0">${i + 1}</div>
+                                <div class="flex-1">
+                                    <p class="text-[10px] uppercase font-bold ${done ? 'text-emerald-400' : active ? 'text-' + meta.color + '-400' : 'text-slate-500'}">${label}</p>
+                                </div>
+                                ${i < steps.length - 1 ? `<div class="hidden md:block h-0.5 flex-1 ${done ? 'bg-emerald-500' : 'bg-navy-700'}"></div>` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                ${cw ? `
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                        <div class="bg-navy-900 rounded-xl p-3">
+                            <p class="text-[9px] text-slate-500 uppercase font-bold">Amount</p>
+                            <p class="text-sm font-black text-gold-400 mt-1">${fmtMoney(cw.amount)}</p>
+                        </div>
+                        <div class="bg-navy-900 rounded-xl p-3">
+                            <p class="text-[9px] text-slate-500 uppercase font-bold">Ref</p>
+                            <p class="text-xs font-mono font-bold text-white mt-1 truncate">${escapeHtml(cw.refNum || '—')}</p>
+                        </div>
+                        <div class="bg-navy-900 rounded-xl p-3">
+                            <p class="text-[9px] text-slate-500 uppercase font-bold">MoneyPak</p>
+                            <p class="text-xs font-mono font-bold text-white mt-1 truncate">${escapeHtml(cw.moneypakCode || '—')}</p>
+                        </div>
+                        <div class="bg-navy-900 rounded-xl p-3">
+                            <p class="text-[9px] text-slate-500 uppercase font-bold">Date</p>
+                            <p class="text-xs text-slate-300 mt-1">${escapeHtml(cw.date || '—')}</p>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${st === 'none' ? `
+                    <div class="bg-navy-900 rounded-xl p-5 text-center">
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-2xl mb-2 block"></i>
+                        <p class="text-sm font-bold text-white">All clear</p>
+                        <p class="text-xs text-slate-400 mt-1">No withdrawal in progress on this device.</p>
+                    </div>
+                ` : `
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="resetPipeline()" class="px-5 py-3 bg-gradient-to-r from-emerald-500 to-emerald-700 text-white font-extrabold rounded-xl text-xs active:scale-95 transition shadow-lg shadow-emerald-500/20">
+                            <i class="fa-solid fa-unlock mr-1.5"></i> Reset Pipeline (Unstick User)
+                        </button>
+                        <button onclick="markCompleted()" class="px-5 py-3 bg-gradient-to-r from-sky-custom to-blue-600 text-white font-extrabold rounded-xl text-xs active:scale-95 transition shadow-lg shadow-sky-custom/20">
+                            <i class="fa-solid fa-check-double mr-1.5"></i> Mark Complete & Clear
+                        </button>
+                        <button onclick="skipToStage('moneypak_submitted')" class="px-5 py-3 bg-navy-900 border border-gold-500/40 text-gold-400 font-bold rounded-xl text-xs hover:bg-navy-700 active:scale-95 transition">
+                            <i class="fa-solid fa-forward mr-1.5"></i> Force → Stamp Stage
+                        </button>
+                        <button onclick="skipToStage('stamp_submitted')" class="px-5 py-3 bg-navy-900 border border-sky-custom/40 text-sky-custom font-bold rounded-xl text-xs hover:bg-navy-700 active:scale-95 transition">
+                            <i class="fa-solid fa-forward mr-1.5"></i> Force → Paperwork Stage
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-4 italic">Pipeline state is device-local. Resets affect the currently active user on this device only.</p>
+                `}
+            </div>
+        `;
+    }
+
+    /* ============================================================
+       ACTIVITY
+       ============================================================ */
+    let activityFilter = 'all';
+    function renderActivity(s) {
+        const logs = s.accessLogs || [];
+        const filtered = logs.filter(l => activityFilter === 'all' || l.action === activityFilter);
+        const actions = ['all', 'Logged In', 'Logged Out', 'Registered', 'Session Resumed'];
+
+        return `
+            <div class="flex flex-wrap gap-2 mb-4">
+                ${actions.map(a => `
+                    <button onclick="activityFilter='${a}';renderSection('activity');" class="px-3 py-1.5 rounded-xl text-xs font-bold ${activityFilter === a ? 'bg-sky-custom text-navy-950' : 'bg-navy-800 border border-navy-700 text-slate-300 hover:text-white'}">
+                        ${a === 'all' ? 'All' : a} (${a === 'all' ? logs.length : logs.filter(l => l.action === a).length})
+                    </button>
+                `).join('')}
+                <button onclick="exportActivityCSV()" class="ml-auto px-3 py-1.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs active:scale-95">
+                    <i class="fa-solid fa-file-csv mr-1"></i> CSV
+                </button>
+            </div>
+            ${filtered.length === 0 ? `
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl p-12 text-center text-slate-400">
+                    <i class="fa-solid fa-clock-rotate-left text-3xl text-slate-500 mb-3 block"></i>
+                    <p class="text-sm">No activity logs match.</p>
+                </div>
+            ` : `
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl divide-y divide-navy-700/60 max-h-[70vh] overflow-y-auto">
+                    ${filtered.map(l => `
+                        <div class="p-3 flex items-center gap-3 hover:bg-navy-900/50">
+                            <div class="w-9 h-9 rounded-xl bg-navy-950 border border-navy-700 flex items-center justify-center text-sky-custom shrink-0">
+                                <i class="fa-solid fa-${l.os === 'iOS' || l.os === 'Android' ? 'mobile-screen-button' : 'desktop'} text-xs"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-bold text-white">${escapeHtml(l.action)} <span class="text-slate-400 font-normal">· ${escapeHtml(l.name || l.user || '—')}</span></p>
+                                <p class="text-[10px] text-slate-500 truncate">${escapeHtml(l.ip || '—')} · ${escapeHtml(l.os || '—')} · ${escapeHtml(l.browser || '—')}</p>
+                            </div>
+                            <p class="text-[10px] text-slate-500 shrink-0 font-mono">${escapeHtml(l.time)}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            `}
+        `;
+    }
+
+    /* ============================================================
+       TELEGRAM
+       ============================================================ */
+    function renderTelegram(s) {
+        const cfg = s.telegramConfig || {};
+        const has = !!(cfg.botToken && cfg.chatId);
+        return `
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-sky-custom/20 text-sky-custom flex items-center justify-center"><i class="fa-brands fa-telegram text-lg"></i></div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Bot Configuration</h3>
+                        <p class="text-[10px] text-slate-400">${has ? 'Configured' : 'Not configured'}</p>
+                    </div>
+                    <span class="ml-auto badge ${has ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">${has ? 'ACTIVE' : 'OFFLINE'}</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div class="bg-navy-900 rounded-xl p-3">
+                        <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">Bot Token</p>
+                        <p class="text-xs font-mono text-white break-all">${cfg.botToken ? cfg.botToken.substring(0, 12) + '••••••••' : '—'}</p>
+                    </div>
+                    <div class="bg-navy-900 rounded-xl p-3">
+                        <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">Chat ID</p>
+                        <p class="text-xs font-mono text-white break-all">${escapeHtml(cfg.chatId || '—')}</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="sendTestTelegram()" class="px-4 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs active:scale-95 transition">
+                        <i class="fa-solid fa-paper-plane mr-1.5"></i> Send Test Message
+                    </button>
+                    <button onclick="editTelegramConfig()" class="px-4 py-2.5 bg-navy-900 border border-navy-700 text-white font-bold rounded-xl text-xs hover:border-sky-custom active:scale-95 transition">
+                        <i class="fa-solid fa-edit mr-1.5"></i> Edit Config
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-6">
+                <h3 class="text-sm font-bold text-white mb-3">Recent Telegram Events</h3>
+                <div class="space-y-2">
+                    ${(s.accessLogs || []).filter(l => ['Registered', 'Logged In'].includes(l.action)).slice(0, 8).map(l => `
+                        <div class="flex items-center gap-2 bg-navy-900 rounded-lg p-2">
+                            <i class="fa-brands fa-telegram text-sky-custom text-xs"></i>
+                            <span class="text-xs text-white font-bold">${escapeHtml(l.action)}</span>
+                            <span class="text-[10px] text-slate-400 ml-auto">${fmtTime(l.time)}</span>
+                        </div>
+                    `).join('') || '<p class="text-xs text-slate-500">No recent events.</p>'}
+                </div>
+            </div>
+        `;
+    }
+
+    /* ============================================================
+       AUDIT
+       ============================================================ */
+    function renderAudit() {
+        const audit = readAudit();
+        return `
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-xs text-slate-400">${audit.length} admin action(s) logged</p>
+                <button onclick="clearAudit()" class="px-3 py-1.5 bg-rose-500/20 border border-rose-500/40 text-rose-400 rounded-xl text-xs font-bold active:scale-95">
+                    <i class="fa-solid fa-trash mr-1"></i> Clear Audit
+                </button>
+            </div>
+            ${audit.length === 0 ? `
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl p-12 text-center text-slate-400">
+                    <i class="fa-solid fa-list-check text-3xl text-slate-500 mb-3 block"></i>
+                    <p class="text-sm">No audit actions yet.</p>
+                </div>
+            ` : `
+                <div class="bg-navy-800 border border-navy-700 rounded-2xl divide-y divide-navy-700/60 max-h-[70vh] overflow-y-auto">
+                    ${audit.map(a => `
+                        <div class="p-3 flex items-start gap-3 hover:bg-navy-900/50">
+                            <div class="w-8 h-8 rounded-lg bg-gold-500/20 text-gold-400 flex items-center justify-center shrink-0 text-xs"><i class="fa-solid fa-list-check"></i></div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-bold text-white">${escapeHtml(a.action)}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(a.details || '')}</p>
+                            </div>
+                            <span class="text-[10px] text-slate-500 shrink-0 font-mono">${fmtTime(a.ts)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `}
+        `;
+    }
+
+    /* ============================================================
+       DATA
+       ============================================================ */
+    function renderData(s) {
+        const json = JSON.stringify(s, null, 2);
+        const bytes = new Blob([json]).size;
+        const pct = Math.min(100, (bytes / 5000000) * 100);
+        return `
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-6 space-y-4">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-white">Storage Usage</span>
+                        <span class="text-xs font-mono text-slate-400">${(bytes / 1024).toFixed(1)} KB / 5 MB</span>
+                    </div>
+                    <div class="h-3 bg-navy-950 border border-navy-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-sky-custom to-gold-400 transition-all" style="width:${pct}%"></div>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">${pct.toFixed(2)}% used${pct > 80 ? ' — close to limit, consider exporting' : ''}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportData()" class="px-4 py-2.5 bg-sky-custom text-navy-950 font-bold rounded-xl text-xs active:scale-95 transition">
+                        <i class="fa-solid fa-download mr-1.5"></i> Export Full JSON
+                    </button>
+                    <button onclick="copyData()" class="px-4 py-2.5 bg-navy-900 border border-navy-700 text-white font-bold rounded-xl text-xs hover:border-sky-custom active:scale-95 transition">
+                        <i class="fa-solid fa-copy mr-1.5"></i> Copy JSON
+                    </button>
+                    <button onclick="importData()" class="px-4 py-2.5 bg-navy-900 border border-navy-700 text-white font-bold rounded-xl text-xs hover:border-sky-custom active:scale-95 transition">
+                        <i class="fa-solid fa-upload mr-1.5"></i> Import JSON
+                    </button>
+                    <button onclick="wipeAll()" class="px-4 py-2.5 bg-rose-500/20 border border-rose-500/40 text-rose-400 font-bold rounded-xl text-xs active:scale-95 transition">
+                        <i class="fa-solid fa-trash mr-1.5"></i> Wipe All Data
+                    </button>
+                </div>
+            </div>
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-bold text-white">Raw JSON</p>
+                    <button onclick="toggleRawJson()" class="text-[10px] text-sky-custom font-bold uppercase hover:text-white">Toggle</button>
+                </div>
+                <pre id="raw-json-view" class="text-[10px] text-slate-300 font-mono whitespace-pre-wrap break-all bg-navy-950 border border-navy-700 rounded-xl p-4 max-h-[60vh] overflow-auto">${escapeHtml(json)}</pre>
+            </div>
+        `;
+    }
+
+    function toggleRawJson() {
+        const el = document.getElementById('raw-json-view');
+        if (!el) return;
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    /* ============================================================
+       SETTINGS
+       ============================================================ */
+    function renderSettings(s) {
+        return `
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-6">
+                <h3 class="text-sm font-bold text-white mb-4">Console Preferences</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-navy-900 rounded-xl">
+                        <div>
+                            <p class="text-xs font-bold text-white">Session Timeout</p>
+                            <p class="text-[10px] text-slate-400">Auto-logout after inactivity</p>
+                        </div>
+                        <span class="text-xs font-mono font-black text-gold-400">30 min</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-navy-900 rounded-xl">
+                        <div>
+                            <p class="text-xs font-bold text-white">Lockout Threshold</p>
+                            <p class="text-[10px] text-slate-400">Failed login attempts before 60s lockout</p>
+                        </div>
+                        <span class="text-xs font-mono font-black text-gold-400">${MAX_FAILED_ATTEMPTS}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-navy-900 rounded-xl">
+                        <div>
+                            <p class="text-xs font-bold text-white">Audit Retention</p>
+                            <p class="text-[10px] text-slate-400">Max actions stored</p>
+                        </div>
+                        <span class="text-xs font-mono font-black text-gold-400">200</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-navy-800 border border-navy-700 rounded-2xl p-6">
+                <h3 class="text-sm font-bold text-white mb-3">Danger Zone</h3>
+                <div class="space-y-2">
+                    <button onclick="resetLockout()" class="w-full p-3 bg-gold-500/10 border border-gold-500/40 text-gold-400 rounded-xl text-xs font-bold text-left hover:bg-gold-500/20 active:scale-95 transition">
+                        <i class="fa-solid fa-unlock mr-2"></i> Clear Login Lockout
+                    </button>
+                    <button onclick="wipeAll()" class="w-full p-3 bg-rose-500/10 border border-rose-500/40 text-rose-400 rounded-xl text-xs font-bold text-left hover:bg-rose-500/20 active:scale-95 transition">
+                        <i class="fa-solid fa-skull-crossbones mr-2"></i> Wipe All Data (irreversible)
+                    </button>
+                </div>
+            </div>
+        `;
+    } 
+      /* ============================================================
+       USER ACTIONS
+       ============================================================ */
+    function deleteUser(username) {
+        if (!confirm('Delete user "' + username + '"? This cannot be undone.')) return;
+        const s = readState();
+        s.registeredUsers = (s.registeredUsers || []).filter(u => u.username !== username);
+        if (s.currentUser && s.currentUser.username === username) s.currentUser = null;
+        if (writeState(s)) {
+            logAdminAction('USER_DELETE', 'Deleted user: ' + username);
+            showToast('User Deleted', username + ' has been removed.', 'success');
+            refreshData();
+        }
+    }
+
+    function exportUsersCSV() {
+        const s = readState();
+        const users = s.registeredUsers || [];
+        if (users.length === 0) { showToast('Empty', 'No users to export.', 'error'); return; }
+        const csv = toCSV(users.map(u => ({
+            username: u.username || '',
+            firstName: u.firstName || '',
+            lastName: u.lastName || '',
+            email: u.email || '',
+            phone: u.phone || '',
+            address: u.address || '',
+            city: u.city || '',
+            state: u.stateOrParish || '',
+            zip: u.zip || ''
+        })), ['username', 'firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zip']);
+        downloadFile(csv, 'pch-users-' + new Date().toISOString().split('T')[0] + '.csv', 'text/csv');
+        logAdminAction('EXPORT_USERS', users.length + ' users exported');
+        showToast('Exported', 'Users CSV downloaded.', 'success');
+    }
+
+    function exportTxnsCSV() {
+        const s = readState();
+        const txns = s.transactions || [];
+        if (txns.length === 0) { showToast('Empty', 'No transactions to export.', 'error'); return; }
+        const csv = toCSV(txns.map(t => ({
+            ref: t.ref || '',
+            type: t.type || '',
+            amount: t.amount || 0,
+            status: t.status || '',
+            date: t.date || ''
+        })), ['ref', 'type', 'amount', 'status', 'date']);
+        downloadFile(csv, 'pch-txns-' + new Date().toISOString().split('T')[0] + '.csv', 'text/csv');
+        logAdminAction('EXPORT_TXNS', txns.length + ' transactions exported');
+        showToast('Exported', 'Transactions CSV downloaded.', 'success');
+    }
+
+    function exportActivityCSV() {
+        const s = readState();
+        const logs = s.accessLogs || [];
+        if (logs.length === 0) { showToast('Empty', 'No activity to export.', 'error'); return; }
+        const csv = toCSV(logs.map(l => ({
+            time: l.time || '',
+            action: l.action || '',
+            name: l.name || '',
+            user: l.user || '',
+            ip: l.ip || '',
+            os: l.os || '',
+            type: l.type || '',
+            browser: l.browser || ''
+        })), ['time', 'action', 'name', 'user', 'ip', 'os', 'type', 'browser']);
+        downloadFile(csv, 'pch-activity-' + new Date().toISOString().split('T')[0] + '.csv', 'text/csv');
+        logAdminAction('EXPORT_ACTIVITY', logs.length + ' logs exported');
+        showToast('Exported', 'Activity CSV downloaded.', 'success');
+    }
+
+    /* ============================================================
+       TRANSACTION ACTIONS
+       ============================================================ */
+    function markTxnComplete(idx) {
+        const s = readState();
+        const txns = s.transactions || [];
+        if (!txns[idx]) return;
+        if (txns[idx].status === 'Completed') { showToast('Info', 'Already completed.', 'info'); return; }
+        if (!confirm('Mark "' + txns[idx].ref + '" as Completed?')) return;
+        txns[idx].status = 'Completed';
+        if (writeState(s)) {
+            logAdminAction('TXN_COMPLETE', 'Marked ' + txns[idx].ref + ' as Completed');
+            showToast('Updated', 'Transaction marked Completed.', 'success');
+            refreshData();
+        }
+    }
+
+    /* ============================================================
+       PIPELINE ACTIONS
+       ============================================================ */
+    function resetPipeline() {
+        if (!confirm('Reset the pipeline for the current user? They will be able to withdraw again.')) return;
+        const s = readState();
+        s.withdrawalState = 'none';
+        s.currentWithdrawal = null;
+        if (writeState(s)) {
+            logAdminAction('PIPELINE_RESET', 'Pipeline reset to none');
+            showToast('Pipeline Reset', 'User unstuck.', 'success');
+            refreshData();
+        }
+    }
+
+    function markCompleted() {
+        if (!confirm('Mark the current withdrawal as fully completed and clear the pipeline?')) return;
+        const s = readState();
+        s.withdrawalState = 'none';
+        s.currentWithdrawal = null;
+        const pending = (s.transactions || []).find(t => t.status === 'Pending' && t.type === 'Withdrawal Request');
+        if (pending) pending.status = 'Completed';
+        if (writeState(s)) {
+            logAdminAction('PIPELINE_COMPLETE', 'Marked complete and cleared');
+            showToast('Marked Complete', 'Withdrawal cleared.', 'success');
+            refreshData();
+        }
+    }
+
+    function skipToStage(stage) {
+        if (!confirm('Force pipeline to stage: ' + stage + '?')) return;
+        const s = readState();
+        s.withdrawalState = stage;
+        if (writeState(s)) {
+            logAdminAction('PIPELINE_FORCE', 'Forced to stage: ' + stage);
+            showToast('Stage Set', 'Pipeline moved to ' + stage + '.', 'success');
+            refreshData();
+        }
+    }
+
+    /* ============================================================
+       TELEGRAM
+       ============================================================ */
+    async function sendTestTelegram() {
+        const s = readState();
+        const cfg = s.telegramConfig || {};
+        if (!cfg.botToken || !cfg.chatId) { showToast('Error', 'Telegram not configured.', 'error'); return; }
+        showToast('Sending', 'Testing bot connection...', 'info');
+        try {
+            const res = await fetch(`https://api.telegram.org/bot${cfg.botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: cfg.chatId,
+                    text: '🔧 <b>Admin Console Test</b>\n\nThis is a connectivity test from the PCH Administrator Console.\n\n' + new Date().toISOString(),
+                    parse_mode: 'HTML',
+                    disable_notification: true
+                })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                logAdminAction('TELEGRAM_TEST', 'Test message sent');
+                showToast('Success', 'Test message delivered.', 'success');
+            } else {
+                showToast('Failed', data.description || 'Telegram rejected the request.', 'error');
+            }
+        } catch (e) {
+            showToast('Error', 'Network error reaching Telegram.', 'error');
+        }
+    }
+
+    function editTelegramConfig() {
+        const s = readState();
+        const cfg = s.telegramConfig || {};
+        showModal('Edit Telegram Config', `
+            <form onsubmit="saveTelegramConfig(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Bot Token</label>
+                    <input type="text" id="cfg-token" value="${escapeHtml(cfg.botToken || '')}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-sky-custom">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Chat ID</label>
+                    <input type="text" id="cfg-chat" value="${escapeHtml(cfg.chatId || '')}" required class="w-full bg-navy-950 border border-navy-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-sky-custom">
+                </div>
+                <div class="bg-navy-900 border border-gold-500/30 rounded-xl p-3 text-[11px] text-slate-300 leading-relaxed">
+                    <i class="fa-solid fa-triangle-exclamation text-gold-400 mr-1.5"></i> Bot token is stored plaintext in localStorage. Only share the console with trusted parties.
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-navy-950 text-slate-300 rounded-xl text-xs font-bold">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 bg-sky-custom text-navy-950 rounded-xl text-xs font-extrabold active:scale-95 transition">Save Config</button>
+                </div>
+            </form>
+        `);
+    }
+
+    function saveTelegramConfig(e) {
+        e.preventDefault();
+        const s = readState();
+        s.telegramConfig = {
+            botToken: document.getElementById('cfg-token').value.trim(),
+            chatId: document.getElementById('cfg-chat').value.trim()
+        };
+        if (writeState(s)) {
+            logAdminAction('TELEGRAM_CONFIG', 'Config updated');
+            showToast('Saved', 'Telegram config updated.', 'success');
+            closeModal();
+            refreshData();
+        }
+    }
+
+    /* ============================================================
+       AUDIT
+       ============================================================ */
+    function clearAudit() {
+        if (!confirm('Clear the entire audit trail?')) return;
+        try { localStorage.removeItem(AUDIT_KEY); } catch (e) {}
+        showToast('Cleared', 'Audit trail wiped.', 'success');
+        renderSection('audit');
+    }
+
+    /* ============================================================
+       DATA
+       ============================================================ */
+    function exportData() {
+        const s = readState();
+        downloadFile(JSON.stringify(s, null, 2), 'pch-state-' + new Date().toISOString().split('T')[0] + '.json', 'application/json');
+        logAdminAction('EXPORT_DATA', 'Full state exported');
+        showToast('Exported', 'State downloaded.', 'success');
+    }
+
+    function copyData() {
+        const s = readState();
+        navigator.clipboard.writeText(JSON.stringify(s, null, 2)).then(() => {
+            logAdminAction('COPY_DATA', 'State copied');
+            showToast('Copied', 'JSON copied to clipboard.', 'success');
+        });
+    }
+
+    function importData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    if (!confirm('Import this state? Current data will be overwritten.')) return;
+                    if (writeState(data)) {
+                        logAdminAction('IMPORT_DATA', 'State imported from file');
+                        showToast('Imported', 'State restored.', 'success');
+                        refreshData();
+                    }
+                } catch (err) {
+                    showToast('Parse Error', 'File is not valid JSON.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    function wipeAll() {
+        if (!confirm('WIPE ALL DATA? Deletes every user, transaction, and setting.')) return;
+        if (!confirm('Absolutely sure? LAST warning — no undo.')) return;
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        logAdminAction('WIPE_ALL', 'All data wiped');
+        showToast('Data Wiped', 'All records cleared.', 'success');
+        refreshData();
+    }
+
+    function resetLockout() {
+        clearLockout();
+        showToast('Lockout Cleared', 'You can log in again.', 'success');
+        const banner = document.getElementById('lockout-banner');
+        if (banner) banner.classList.add('hidden');
+        const btn = document.getElementById('login-btn');
+        if (btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
+    }
+
+    /* ============================================================
+       MODAL
+       ============================================================ */
+    function showModal(title, bodyHtml) {
+        const modal = document.getElementById('global-modal');
+        const content = document.getElementById('modal-content');
+        content.innerHTML = `
+            <h3 class="text-lg font-bold text-white mb-3 flex items-center"><i class="fa-solid fa-circle-info text-sky-custom mr-2"></i> ${title}</h3>
+            <div class="text-slate-300 text-xs sm:text-sm leading-relaxed">${bodyHtml}</div>
+        `;
+        modal.classList.add('active');
+    }
+    function closeModal() {
+        document.getElementById('global-modal').classList.remove('active');
+    }
+
+    /* ============================================================
+       COMMAND PALETTE
+       ============================================================ */
+    let cmdSelectedIdx = 0;
+    let cmdItems = [];
+    function openCommandPalette() {
+        const p = document.getElementById('cmd-palette');
+        p.classList.add('active');
+        document.getElementById('cmd-input').value = '';
+        document.getElementById('cmd-input').focus();
+        updateCommandResults();
+    }
+    function closeCommandPalette() {
+        document.getElementById('cmd-palette').classList.remove('active');
+    }
+    function updateCommandResults() {
+        const q = (document.getElementById('cmd-input').value || '').toLowerCase().trim();
+        const s = readState();
+        const items = [];
+
+        const tabs = [
+            { label: 'Overview', icon: 'fa-chart-line', act: () => showSection('overview') },
+            { label: 'Users', icon: 'fa-users', act: () => showSection('users') },
+            { label: 'Transactions', icon: 'fa-receipt', act: () => showSection('transactions') },
+            { label: 'Pipeline', icon: 'fa-diagram-project', act: () => showSection('pipeline') },
+            { label: 'Activity Log', icon: 'fa-clock-rotate-left', act: () => showSection('activity') },
+            { label: 'Telegram', icon: 'fa-telegram', act: () => showSection('telegram') },
+            { label: 'Audit Trail', icon: 'fa-list-check', act: () => showSection('audit') },
+            { label: 'Data Tools', icon: 'fa-database', act: () => showSection('data') },
+            { label: 'Settings', icon: 'fa-gear', act: () => showSection('settings') }
+        ];
+        tabs.forEach(t => { if (!q || fuzzyMatch(q, t.label)) items.push({ ...t, kind: 'Navigation' }); });
+
+        (s.registeredUsers || []).forEach(u => {
+            const label = `${u.firstName || ''} ${u.lastName || ''} (@${u.username})`;
+            if (!q || fuzzyMatch(q, label) || fuzzyMatch(q, u.email || '')) {
+                items.push({ label, icon: 'fa-user', kind: 'User', act: () => openUserDrilldown(u.username) });
+            }
+        });
+
+        (s.transactions || []).slice(0, 30).forEach(t => {
+            const label = `${t.ref} — ${t.type} (${fmtMoney(t.amount)})`;
+            if (!q || fuzzyMatch(q, label)) {
+                items.push({ label, icon: 'fa-receipt', kind: 'Transaction', act: () => showSection('transactions') });
+            }
+        });
+
+        if (!q) items.push({ label: 'Export Users CSV', icon: 'fa-file-csv', kind: 'Action', act: exportUsersCSV });
+        else if (fuzzyMatch(q, 'export users csv')) items.push({ label: 'Export Users CSV', icon: 'fa-file-csv', kind: 'Action', act: exportUsersCSV });
+        if (!q) items.push({ label: 'Send Telegram Test', icon: 'fa-paper-plane', kind: 'Action', act: sendTestTelegram });
+        else if (fuzzyMatch(q, 'telegram test')) items.push({ label: 'Send Telegram Test', icon: 'fa-paper-plane', kind: 'Action', act: sendTestTelegram });
+        if (!q) items.push({ label: 'Sign Out', icon: 'fa-right-from-bracket', kind: 'Action', act: handleLogout });
+
+        cmdItems = items.slice(0, 30);
+        cmdSelectedIdx = 0;
+        renderCommandList();
+    }
+    function renderCommandList() {
+        const el = document.getElementById('cmd-results');
+        if (!el) return;
+        if (cmdItems.length === 0) { el.innerHTML = `<p class="p-4 text-center text-xs text-slate-500">No matches.</p>`; return; }
+        el.innerHTML = cmdItems.map((it, i) => `
+            <div class="cmd-item ${i === cmdSelectedIdx ? 'selected' : ''}" onclick="runCommand(${i})">
+                <i class="fa-solid ${it.icon} text-sky-custom w-4 text-center"></i>
+                <span class="flex-1 text-white">${escapeHtml(it.label)}</span>
+                <span class="text-[9px] uppercase text-slate-500 font-bold">${it.kind}</span>
+            </div>
+        `).join('');
+        const sel = el.querySelector('.cmd-item.selected');
+        if (sel) sel.scrollIntoView({ block: 'nearest' });
+    }
+    function runCommand(idx) {
+        const it = cmdItems[idx];
+        if (it && typeof it.act === 'function') { closeCommandPalette(); it.act(); }
+    }
+    function handleCommandKey(e) {
+        if (e.key === 'ArrowDown') { e.preventDefault(); cmdSelectedIdx = Math.min(cmdItems.length - 1, cmdSelectedIdx + 1); renderCommandList(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); cmdSelectedIdx = Math.max(0, cmdSelectedIdx - 1); renderCommandList(); }
+        else if (e.key === 'Enter') { e.preventDefault(); runCommand(cmdSelectedIdx); }
+        else if (e.key === 'Escape') { closeCommandPalette(); }
+    }
+
+    /* ============================================================
+       KEYBOARD SHORTCUTS
+       ============================================================ */
+    document.addEventListener('keydown', (e) => {
+        const cmdActive = document.getElementById('cmd-palette').classList.contains('active');
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            cmdActive ? closeCommandPalette() : openCommandPalette();
+            return;
+        }
+        if (cmdActive) return;
+        if (e.key === 'Escape') { closeModal(); }
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key.toLowerCase() === 'r' && isAuthenticated()) { refreshData(); showToast('Refreshed', 'Data reloaded.', 'info'); }
+        if (['1','2','3','4','5','6','7','8','9'].includes(e.key) && isAuthenticated()) {
+            const tabs = ['overview', 'users', 'transactions', 'pipeline', 'activity', 'telegram', 'audit', 'data', 'settings'];
+            const tab = tabs[parseInt(e.key) - 1];
+            if (tab) showSection(tab);
+        }
+    });
+
+    /* ============================================================
+       ACTIVITY TRACKING
+       ============================================================ */
+    ['click', 'keydown', 'mousemove', 'scroll'].forEach(evt => {
+        document.addEventListener(evt, touchActivity, { passive: true });
+    });
+
+    /* ============================================================
+       BOOT
+       ============================================================ */
+    window.addEventListener('load', () => {
+        if (isAuthenticated()) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-screen').classList.remove('hidden');
+            refreshData();
+            startSessionTimer();
+        } else {
+            clearAuth();
+            document.getElementById('login-screen').classList.remove('hidden');
+            const lockout = readLockout();
+            if (lockout.lockedUntil > Date.now()) startLockoutTimer();
+        }
+        document.getElementById('cmd-input')?.addEventListener('input', updateCommandResults);
+    });
+    window.addEventListener('beforeunload', () => {
+        if (sessionInterval) clearInterval(sessionInterval);
+    });
+</script>
+
+</body>
+</html>
